@@ -1,0 +1,1721 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>函数极限可视化 · ε-δ 探索器</title>
+<style>
+  :root{
+    --bg:#eef2f9; --card:#ffffff; --ink:#16202e; --sub:#5a6a80; --line:#e3e9f2;
+    --blue:#2b6cb0; --blue-l:#e2edfb; --green:#2f855a; --green-l:#dcfce7;
+    --red:#c53030; --red-l:#fee2e2; --amber:#b7791f;
+    --shadow:0 1px 2px rgba(23,43,77,.05),0 10px 26px -20px rgba(23,43,77,.45);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;color:var(--ink);
+    background:radial-gradient(1200px 380px at 12% -8%,#dfe9fa 0%,rgba(223,233,250,0) 62%),var(--bg);
+    font-family:"Microsoft YaHei","PingFang SC","Segoe UI",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  body::before{content:'';position:fixed;top:0;left:0;right:0;height:3px;z-index:9;
+    background:linear-gradient(90deg,#2b6cb0,#2f855a 55%,#dd6b20)}
+  header{padding:20px 24px 14px;border-bottom:1px solid rgba(227,233,242,.9);margin-bottom:2px;
+    background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(255,255,255,0))}
+  header h1{margin:0;font-size:22px;letter-spacing:.4px;font-weight:800;
+    background:linear-gradient(92deg,#1d3358,#2b6cb0 70%,#3d8bd0);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  header p{margin:7px 0 0;color:var(--sub);font-size:13px}
+  .wrap{display:grid;grid-template-columns:336px minmax(0,1fr);gap:18px;padding:16px 24px 32px;align-items:start}
+  @media (max-width:900px){.wrap{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px;box-shadow:var(--shadow);min-width:0}
+  .wrap>*{min-width:0}
+  .card h2{display:flex;align-items:center;gap:9px;margin:0 0 13px;font-size:14px;color:#2c3a52;
+    font-weight:700;letter-spacing:.3px}
+  .card h2 .num{flex:0 0 22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:12.5px;font-weight:700;color:#fff;background:linear-gradient(180deg,#5b8def,#2b6cb0);
+    box-shadow:0 2px 6px -2px rgba(43,108,176,.8)}
+  #panelSeq .card h2 .num{background:linear-gradient(180deg,#e8a44c,#b7791f);box-shadow:0 2px 6px -2px rgba(183,121,31,.8)}
+  .mathprev{margin-top:9px;padding:9px 12px;border-radius:10px;background:#f7faff;border:1px dashed #cfdcee;
+    font-family:"Cambria Math","Latin Modern Math","Times New Roman",Georgia,serif;font-size:17px;
+    color:#1c2b45;min-height:38px;display:flex;align-items:center;overflow-x:auto;white-space:nowrap;
+    max-width:100%;min-width:0}
+  .mathprev .lbl{font-family:"Microsoft YaHei",sans-serif;font-size:12px;color:#8593a8;margin-right:9px}
+  .frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;
+    margin:0 .2em;font-size:.86em;line-height:1.15}
+  .frac .nu{padding:0 .3em;border-bottom:1.6px solid currentColor}
+  .frac .de{padding:0 .3em}
+  .mathprev sup{font-size:.72em;vertical-align:super}
+  label{display:block;font-size:13px;margin:13px 0 5px;color:#334a68}
+  label:first-child{margin-top:0}
+  input[type=text],input[type=number],select{width:100%;padding:9px 11px;border:1px solid var(--line);
+    border-radius:10px;font-size:14px;font-family:Consolas,"Courier New",monospace;background:#fbfdff;color:var(--ink);
+    transition:.15s}
+  input[type=text]:focus,input[type=number]:focus{outline:none;border-color:#a9c6ec;background:#fff;
+    box-shadow:0 0 0 3px rgba(43,108,176,.12)}
+  input[type=range]{--rc:#2b6cb0;-webkit-appearance:none;appearance:none;width:100%;height:30px;
+    background:transparent;margin:2px 0;cursor:pointer}
+  input[type=range]::-webkit-slider-runnable-track{height:7px;border-radius:99px;
+    background:linear-gradient(90deg,#e9eff9,#dce6f5);border:1px solid #dbe3f0}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;margin-top:-7.5px;
+    border-radius:50%;background:#fff;border:3px solid var(--rc);box-shadow:0 1px 5px rgba(20,40,80,.28)}
+  input[type=range]:active::-webkit-slider-thumb{box-shadow:0 0 0 6px rgba(43,108,176,.14)}
+  input[type=range]::-moz-range-track{height:7px;border-radius:99px;background:#e9eff9;border:1px solid #dbe3f0}
+  input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:#fff;border:3px solid var(--rc)}
+  input[type=range].r-eps{--rc:#2f855a}
+  input[type=range].r-delta{--rc:#2b6cb0}
+  input[type=range].r-n{--rc:#b7791f}
+  input[type=range]:disabled{opacity:.42;cursor:not-allowed}
+  button:disabled{opacity:.5;cursor:not-allowed;transform:none}
+  .row{display:flex;gap:8px;align-items:center}
+  .row>*{flex:1}
+  .hint{font-size:12px;color:var(--sub);line-height:1.65}
+  .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-family:Consolas,monospace}
+  .b-ok{background:var(--green-l);color:var(--green)}
+  .b-bad{background:var(--red-l);color:var(--red)}
+  .b-warn{background:#fef3c7;color:var(--amber)}
+  .b-info{background:var(--blue-l);color:var(--blue)}
+  button{padding:9px 10px;border-radius:10px;border:1px solid var(--line);background:#fbfdff;color:#31415c;
+    font-size:13px;font-weight:500;cursor:pointer;transition:transform .12s,background .15s,border-color .15s}
+  button:hover{background:#eff5fd;border-color:#c6d7ee;transform:translateY(-1px)}
+  button:active{transform:translateY(0)}
+  button.primary{background:linear-gradient(180deg,#3d80dd,#245cb0);border-color:#245cb0;color:#fff;
+    box-shadow:0 3px 12px -6px rgba(36,92,176,.85);font-weight:600}
+  button.primary:hover{background:linear-gradient(180deg,#3474d3,#1f549f)}
+  .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+  .stat{font-size:13px;line-height:2}
+  .stat b{font-family:Consolas,monospace;font-size:13.5px}
+  .def{margin-top:11px;padding:11px 12px;border-radius:10px;background:linear-gradient(180deg,#f8fbff,#f3f7fd);
+    border:1px dashed #cfdcee;font-size:13px;line-height:1.85;font-family:Consolas,"Microsoft YaHei",monospace}
+  #stage{position:relative;background:var(--card);border:1px solid var(--line);border-radius:16px;
+    box-shadow:var(--shadow);overflow:hidden}
+  .stagehd{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 16px 9px;
+    border-bottom:1px solid #eef2f9;font-size:13px;font-weight:700;color:#3b4b66}
+  .stagehd span{font-weight:400;font-size:12px;color:#8593a8}
+  canvas{display:block;width:100%;height:600px;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+  canvas.drag{cursor:grabbing}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;padding:10px 14px 14px;font-size:12px;color:var(--sub)}
+  .legend span{display:inline-flex;align-items:center;background:#f7fafe;border:1px solid #eaf0f9;
+    border-radius:999px;padding:3px 10px}
+  .legend i{display:inline-block;width:13px;height:10px;border-radius:3px;margin-right:6px}
+  .tip{margin:14px 0 0;padding:11px 14px;background:linear-gradient(180deg,#f8fbff,#f2f7fd);
+    border:1px solid #e6eef9;border-left:4px solid var(--blue);border-radius:10px;
+    font-size:13px;color:#33455f;line-height:1.8}
+  .keypad{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-top:9px}
+  .keypad button{padding:7px 0;font-size:12.5px;font-family:Consolas,"Microsoft YaHei",monospace;background:#f6f9fd;
+    white-space:nowrap;overflow:hidden}
+  .keypad button:hover{background:#e9f1fc;border-color:#c6d7ee}
+  .chk{display:flex;align-items:center;gap:8px;font-size:13px;margin-top:15px;color:#334a68;cursor:pointer}
+  .chk input{width:16px;height:16px;accent-color:var(--blue);cursor:pointer}
+  .tabs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:13px;padding:5px;
+    background:#e8eef8;border-radius:13px;border:1px solid #e0e8f4}
+  .tab{padding:9px 4px;font-size:12.5px;border-radius:9px;background:transparent;border:none;
+    color:#54637c;font-weight:600}
+  .tab.active{background:#fff;color:var(--blue);box-shadow:0 1px 5px rgba(23,43,77,.16)}
+  .presets{display:flex;flex-direction:column;gap:5px;margin-top:9px}
+  .presets button{text-align:left;font-size:12.5px;font-family:Consolas,"Microsoft YaHei",monospace}
+  .err{color:var(--red);font-size:12.5px;margin-top:6px;min-height:16px}
+  code{background:#eef3fa;padding:1px 5px;border-radius:5px;font-family:Consolas,monospace;font-size:12.5px;color:#2c4a72}
+  /* 移动端适配放在最后：否则会被前面的基础规则盖掉 */
+  @media (max-width:900px){
+    header{padding:14px 14px 10px}
+    header h1{font-size:18px}
+    header p{font-size:12px}
+    .wrap{grid-template-columns:1fr;gap:12px;padding:12px 12px 24px}
+    canvas{height:380px}
+    .card{padding:13px}
+    .mathprev{font-size:15px}
+    .legend{gap:6px;font-size:11.5px}
+    .btns{gap:6px}
+    button{padding:9px 8px;min-height:44px}
+    .keypad button{min-height:38px}
+    input[type=range]{height:46px}
+    input[type=range]::-webkit-slider-thumb{width:28px;height:28px;margin-top:-10.5px}
+    input[type=range]::-moz-range-thumb{width:24px;height:24px}
+    .presets button{font-size:12px;min-height:40px}
+  }
+  @media (max-width:420px){
+    header h1{font-size:16px}
+    header p{font-size:11.5px}
+    .keypad{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+    .tabs{grid-template-columns:1fr}
+    canvas{height:300px}
+    .presets button{font-size:11.5px}
+    .stat{font-size:12.5px}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>函数极限可视化 · ε-δ 探索器</h1>
+  <p>输入函数 → 拖 ε、δ 两个滑块 → 在图上看见极限（高等数学 · 大一适用）</p>
+</header>
+
+<div class="wrap">
+  <!-- ============ 左侧控制面板 ============ -->
+  <aside>
+    <div class="tabs">
+      <button id="tabFn" class="tab active" type="button">函数极限 f(x)</button>
+      <button id="tabSeq" class="tab" type="button">数列极限 aₙ</button>
+      <button id="tabCont" class="tab" type="button">连续 / 间断点</button>
+    </div>
+
+    <div id="panelFn">
+    <div class="card">
+      <h2><span class="num">1</span>选择函数</h2>
+      <label>f(x) =</label>
+      <input id="expr" type="text" value="sin(x)/x" spellcheck="false">
+      <div class="err" id="exprErr"></div>
+      <div class="keypad" id="keypad"></div>
+      <div class="hint">乘号可省略：<code>2x</code>、<code>2π</code>、<code>x sin(x)</code> 都能识别。</div>
+      <div class="mathprev" id="mathPrev"><span class="lbl">显示为</span></div>
+
+      <label>研究哪个点？ x₀ =</label>
+      <div class="row">
+        <input id="aNum" type="number" value="0" step="any" min="-1000000" max="1000000">
+        <span class="badge b-info" id="aLbl">0</span>
+      </div>
+      <input id="aRange" type="range" min="-10" max="10" step="0.01" value="0">
+      <label class="chk"><input type="checkbox" id="invChk"> 显示关于 y = x 的对称曲线</label>
+      <div class="hint">只有在一一对应时，这条对称曲线才是真正的反函数图像（如 x² 的对称曲线就不是函数）。</div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <h2><span class="num">2</span>拖动两个滑块</h2>
+      <label>ε 允许的误差：<b id="epsLbl">0.200</b> <span class="hint">越小要求越严</span></label>
+      <input id="epsRange" class="r-eps" type="range" min="0" max="1" step="0.001" value="0.42">
+
+      <label>δ 自变量的范围：<b id="deltaLbl">0.500</b></label>
+      <input id="deltaRange" class="r-delta" type="range" min="0.001" max="3" step="0.001" value="0.5">
+
+      <div class="tip">ε 变小 → 绿带变窄；δ 变小 → 蓝带变窄。蓝带里的曲线全落在绿带里，就对了。</div>
+
+      <div class="btns">
+        <button class="primary" id="fitBtn">自动设置 δ</button>
+        <button id="zoomDeltaBtn">放大 δ 邻域</button>
+        <button id="exportBtn">导出图片</button>
+        <button id="resetBtn">复位</button>
+        <button id="zoomInBtn">放大</button>
+        <button id="zoomOutBtn">缩小</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <h2><span class="num">3</span>经典例子</h2>
+      <div class="presets" id="presets"></div>
+    </div>
+    </div>
+
+    <div id="panelSeq" style="display:none">
+    <div class="card">
+      <h2><span class="num">1</span>选择数列</h2>
+      <label>aₙ =</label>
+      <input id="expr2" type="text" value="(1+1/n)^n" spellcheck="false">
+      <div class="err" id="exprErr2"></div>
+      <div class="keypad" id="keypad2"></div>
+      <div class="hint">用 <code>n</code> 表示第几项；乘号同样可省略。</div>
+      <div class="mathprev" id="mathPrev2"><span class="lbl">显示为</span></div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <h2><span class="num">2</span>拖动两个滑块</h2>
+      <label>ε 允许的误差：<b id="epsLbl2">0.200</b> <span class="hint">越小要求越严</span></label>
+      <input id="epsRange2" class="r-eps" type="range" min="0" max="1" step="0.001" value="0.42">
+
+      <label>N（从第几项之后开始保证）：<b id="nLbl">10</b></label>
+      <input id="nRange" class="r-n" type="range" min="1" max="200" step="1" value="10">
+
+      <div class="tip">ε 变小 → 绿带变窄，通常要把 N 调大；灰色区域（n ≤ N）就是“不保证”的部分。</div>
+
+      <div class="btns">
+        <button class="primary" id="fitNBtn">自动设置 N</button>
+        <button id="exportBtn2">导出图片</button>
+        <button id="resetBtn2">复位</button>
+        <button id="zoomInBtn2">放大</button>
+      </div>
+      <div class="btns" style="grid-template-columns:1fr">
+        <button id="zoomOutBtn2">缩小</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <h2><span class="num">3</span>常见数列</h2>
+      <div class="presets" id="presets2"></div>
+    </div>
+    </div>
+
+    <div id="panelCont" style="display:none">
+    <div class="card">
+      <h2><span class="num">1</span>选择函数（支持分段）</h2>
+      <label>f(x) =</label>
+      <input id="expr3" type="text" value="(x^2-1)/(x-1)" spellcheck="false">
+      <div class="err" id="exprErr3"></div>
+      <div class="keypad" id="keypad3"></div>
+      <div class="hint">分段函数写法：<code>x&lt;0:-1; x&gt;=0:1</code>。冒号前是条件，分号分隔各段，最后一段可以写 <code>else:</code>。条件支持 <code>&lt; &lt;= &gt; &gt;= = !=</code>，可连写（如 <code>0&lt;x&lt;1</code>）。</div>
+      <div class="mathprev" id="mathPrev3"><span class="lbl">显示为</span></div>
+
+      <label>考察哪个点？ x₀ =</label>
+      <div class="row">
+        <input id="aNum3" type="number" value="1" step="any" min="-1000000" max="1000000">
+        <span class="badge b-info" id="aLbl3">1</span>
+      </div>
+      <input id="aRange3" type="range" min="-10" max="10" step="0.01" value="1">
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <h2><span class="num">2</span>可去间断“填洞”</h2>
+      <label>填洞进度：<b id="plugLbl">0%</b> <span class="hint">只有可去间断才能填</span></label>
+      <input id="plugRange" class="r-plug" type="range" min="0" max="100" step="1" value="0">
+      <div class="tip">“填洞”就是重新定义 f(x₀) = 极限值 L。拖动滑块，看点从原来的位置慢慢“补”到极限处 —— 间断就消失了，函数变连续。</div>
+
+      <div class="btns">
+        <button class="primary" id="autoPlugBtn">自动填洞</button>
+        <button id="exportBtn3">导出图片</button>
+        <button id="resetBtn3">复位</button>
+        <button id="zoomInBtn3">放大</button>
+      </div>
+      <div class="btns" style="grid-template-columns:1fr">
+        <button id="zoomOutBtn3">缩小</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <h2><span class="num">3</span>典型例子（四类间断）</h2>
+      <div class="presets" id="presets3"></div>
+    </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <div class="stat" id="stats"></div>
+      <div class="def" id="defLine"></div>
+    </div>
+  </aside>
+
+  <!-- ============ 右侧图像 ============ -->
+  <section>
+    <div id="stage">
+      <div class="stagehd">图像区 <span id="stageHint">拖动平移 · 滚轮/双指缩放 · 绿带 = ε，蓝带 = δ</span></div>
+      <canvas id="cv"></canvas>
+      <div class="legend" id="legendFn">
+        <span><i style="background:#718096"></i>曲线</span>
+        <span><i style="background:#2f855a"></i>在 ε 带内 ✓</span>
+        <span><i style="background:#c53030"></i>跑出 ε 带 ✗</span>
+        <span><i style="background:rgba(47,133,90,.28);border:1px solid #2f855a"></i>ε 带</span>
+        <span><i style="background:rgba(43,108,176,.18);border:1px solid #2b6cb0"></i>δ 带</span>
+        <span><i style="background:#dd6b20"></i>关于 y=x 对称</span>
+        <span>🖱 拖动平移 · 滚轮缩放</span>
+      </div>
+      <div class="legend" id="legendCont" style="display:none">
+        <span><i style="background:#718096"></i>曲线</span>
+        <span><i style="background:#2b6cb0"></i>左极限 f(x₀⁻)</span>
+        <span><i style="background:#2f855a"></i>右极限 f(x₀⁺)</span>
+        <span><i style="background:#7c3aed"></i>函数值 f(x₀)</span>
+        <span><i style="background:#c53030"></i>竖直渐近线</span>
+        <span>空心 = 取不到 · 实心 = 取得到</span>
+      </div>
+    </div>
+    <div class="tip" id="coach"></div>
+  </section>
+</div>
+
+<script>
+//==CORE-START==  —— 以下为与界面无关的核心计算（可单独测试）
+var FN_NAMES=['abs','sqrt','cbrt','exp','log','log2','log10','sin','cos','tan','asin','acos',
+  'atan','sinh','cosh','tanh','min','max','pow','floor','ceil','round','sign','hypot','atan2'];
+var ALLOWED={}; FN_NAMES.concat(['x','n','PI','E']).forEach(function(n){ALLOWED[n]=1;});
+
+function stripPrefix(s){
+  return String(s==null?'':s).replace(/^\s*(y|f\s*\(\s*x\s*\)|a\s*ₙ|a\s*\(\s*n\s*\)|a\s*n)\s*=\s*/i,'');   // 去掉 f(x)= / aₙ= 前缀
+}
+function normalizeExpr(raw){
+  var s=stripPrefix(raw).trim();
+  s=s.replace(/[×·＊]/g,'*').replace(/[÷]/g,'/').replace(/[−–—]/g,'-').replace(/\^/g,'**');
+  if(/[^0-9A-Za-z_+\-*/%(),.πΠ\s]/.test(s)) throw new Error('含有不支持的字符');
+  return rebuildTokens(s);
+}
+// 把表达式切成“词”，顺便统一符号，并补上省略的乘号
+// 2x→2*x、xπ→x*PI、xn→x*n、xpi→x*PI、2(x+1)→2*(x+1)；sin( 仍当作函数调用，不会被拆
+function rebuildTokens(s){
+  var re=/[A-Za-z_][A-Za-z0-9_]*|\d+\.?\d*(?:[eE][+-]?\d+)?|\.\d+(?:[eE][+-]?\d+)?|\*\*|[πΠ]|[-+*/%(),]/g;
+  var tk=fixUnaryPow(s.match(re)||[]), out='', prev=null, i, t;
+  for(i=0;i<tk.length;i++){
+    t=tk[i];
+    if(t==='π'||t==='Π'||t==='pi') t='PI';
+    else if(t==='e') t='E';
+    else if(t==='ln') t='log';
+    else if(!ALLOWED[t] && /^[A-Za-z_]/.test(t)) t=splitName(t);
+    if(prev!==null && needMul(prev,t)) out+='*';
+    out+=t; prev=t;
+  }
+  return out;
+}
+// 只拆 x / n / PI / E 的拼接串（xpi→x*PI、xx→x*x）；拆不干净就原样返回，后面报错
+function splitName(name){
+  var m=name.match(/pi|e|[xn]/gi);
+  if(!m || m.join('').toLowerCase()!==name.toLowerCase()) return name;
+  return m.map(function(p){
+    if(p==='x'||p==='X') return 'x';
+    if(p==='n'||p==='N') return 'n';
+    return (p.toLowerCase()==='pi')?'PI':'E';
+  }).join('*');
+}
+function needMul(a,b){
+  if(b==='(' && FN_NAMES.indexOf(a)>=0) return false;             // 函数调用：sin( 、log10(
+  if(/[\d)]$/.test(a) && /^[\dA-Za-z(]/.test(b)) return true;      // 2x    )x    2(
+  if(/^[A-Za-z_]/.test(a)){
+    if(/^[A-Za-z_]/.test(b)) return true;                          // x n     PI x
+    if(b==='(' && FN_NAMES.indexOf(a)<0) return true;              // x(2) → x*(2)
+    if(/^\d/.test(b)) return true;                                 // x2
+  }
+  return false;
+}
+// JS 不允许 -x**2 / 2**-3 这种写法（Unary operator used immediately before exponentiation），
+// 这里在词法阶段补括号：-x^2 → -(x**2)；2^-3 → 2**(-3)
+function atomEnd(tk,i){
+  var t=tk[i], d=0, j;
+  if(t==='('){ for(j=i;j<tk.length;j++){ if(tk[j]==='(') d++; else if(tk[j]===')'){ d--; if(!d) return j; } } return tk.length-1; }
+  if(/^[A-Za-z_]/.test(t)&&tk[i+1]==='(') return atomEnd(tk,i+1);
+  return i;
+}
+function powEnd(tk,i){            // 幂链的结束位置：A**B**C
+  var e=atomEnd(tk,i);
+  while(tk[e+1]==='**'){ e=atomEnd(tk,e+2); }
+  return e;
+}
+function fixUnaryPow(tk){
+  var out=[], i, t, prev, ae, sgn;
+  for(i=0;i<tk.length;i++){
+    t=tk[i];
+    sgn=(t==='-'||t==='+');
+    if(sgn){
+      prev=(out.length?out[out.length-1]:null);
+      if(prev===null||prev==='('||prev===','||/^[-+*/%]$/.test(prev)){
+        if(prev==='**'){                     // 2**-3 → 2**(-3)
+          ae=atomEnd(tk,i+1);
+          out.push('('); out.push(t);
+          for(var k=i+1;k<=ae;k++) out.push(tk[k]);
+          out.push(')'); i=ae; continue;
+        }
+        ae=atomEnd(tk,i+1);
+        if(tk[ae+1]==='**'){                 // -x**2 → -(x**2)（负号必须在括号外）
+          ae=powEnd(tk,i+1);
+          out.push(t); out.push('(');
+          for(var m=i+1;m<=ae;m++) out.push(tk[m]);
+          out.push(')'); i=ae; continue;
+        }
+      }
+    }
+    out.push(t);
+  }
+  return out;
+}
+var MATH_BODY='var n=x,abs=Math.abs,sqrt=Math.sqrt,cbrt=Math.cbrt,exp=Math.exp,log=Math.log,log2=Math.log2,'+
+    'log10=Math.log10,sin=Math.sin,cos=Math.cos,tan=Math.tan,asin=Math.asin,acos=Math.acos,'+
+    'atan=Math.atan,sinh=Math.sinh,cosh=Math.cosh,tanh=Math.tanh,min=Math.min,max=Math.max,'+
+    'pow=Math.pow,floor=Math.floor,ceil=Math.ceil,round=Math.round,sign=Math.sign,'+
+    'hypot=Math.hypot,atan2=Math.atan2,PI=Math.PI,E=Math.E;';
+function checkIds(s){
+  var ids=s.replace(/\d+\.?\d*(?:[eE][+-]?\d+)?/g,' ').match(/[A-Za-z_][A-Za-z0-9_]*/g)||[];   // 先去掉数字(含 2e-3 这种)，再查标识符
+  for(var i=0;i<ids.length;i++) if(!ALLOWED[ids[i]]) throw new Error('不认识的符号：'+ids[i]);
+}
+// 把“已经规范化好”的表达式源码编译成函数
+function makeFnFromSource(s){
+  if(!s) throw new Error('请输入函数表达式');
+  if(/[^0-9A-Za-z_+\-*/%(),.\s]/.test(s)) throw new Error('含有不支持的字符');
+  checkIds(s);
+  var fn=new Function('x', MATH_BODY+'return ('+s+');');
+  fn(0.5); // 触发语法错误
+  return fn;
+}
+// ===== 分段函数 =====
+// 语法：  条件:表达式;  条件:表达式;  else:表达式      例：x<0:-1; x>=0:1
+// 条件支持 < <= > >= == != && || 与连写（0<x<1），也支持中文 ≤ ≥ ≠ 与 and/or
+function isPiecewise(raw){ return /[;；]/.test(String(raw)) || /[:：]/.test(String(raw)); }
+function isDefaultCond(c){ return /^(else|otherwise|default|其他|其余|默认|其它)$/i.test(String(c||'').trim()); }
+// 条件里的“一侧”也要支持省略乘号：2x<1、x<π …
+function normSide(t){
+  t=String(t||'').trim();
+  if(!t) return '';
+  return rebuildTokens(t);
+}
+function normalizeCond(raw){
+  var s=String(raw||'').trim()
+    .replace(/[≤]/g,'<=').replace(/[≥]/g,'>=').replace(/[≠]/g,'!=').replace(/[＝]/g,'==')
+    .replace(/[－–—−]/g,'-').replace(/[×·＊]/g,'*').replace(/[÷]/g,'/')
+    .replace(/[（]/g,'(').replace(/[）]/g,')').replace(/[＆]/g,'&').replace(/[｜]/g,'|')
+    .replace(/\bor\b/gi,'||').replace(/\band\b/gi,'&&').replace(/或/g,'||').replace(/与/g,'&&')   // 英文/中文的逻辑词
+    .replace(/\s+/g,'');
+  s=s.replace(/([^<>=!])=(?!=)/g,'$1==');                       // 单个 = 当相等
+  var segs=s.split(/(&&|\|\|)/), out=[];
+  for(var i=0;i<segs.length;i++){
+    var seg=segs[i];
+    if(seg==='&&'||seg==='||'){ out.push(seg); continue; }
+    if(!seg) continue;
+    var parts=seg.split(/(<=|>=|!=|==|<|>)/), terms=[], j;
+    for(j=0;j+1<parts.length;j+=2) terms.push(normSide(parts[j])+parts[j+1]+normSide(parts[j+2]));
+    if(!terms.length) out.push(normSide(seg));
+    else out.push(terms.length===1?terms[0]:'('+terms.join('&&')+')');   // 连写 0<x<1 → (0<x&&x<1)
+  }
+  return out.join(' ');
+}
+function makeCondFn(s){
+  if(!s) throw new Error('分段条件为空');
+  if(/[^0-9A-Za-z_+\-*/%(),.<>=!&|\s]/.test(s)) throw new Error('分段条件里有不支持的字符');
+  checkIds(s);
+  var fn=new Function('x', MATH_BODY+'return ('+s+');');
+  fn(0.5);
+  return fn;
+}
+function parsePieces(raw){
+  var s=stripPrefix(raw).trim(), arr=s.split(/[;；]/), out=[], i;
+  for(i=0;i<arr.length;i++){
+    var p=arr[i].trim();
+    if(!p) continue;
+    var idx=p.search(/[:：]/);
+    if(idx<0){ out.push({cond:null,expr:p}); continue; }
+    var c=p.slice(0,idx).trim(), v=p.slice(idx+1).trim();
+    if(isDefaultCond(c)||!c) c=null;
+    out.push({cond:c,expr:v});
+  }
+  return out;
+}
+function compilePiecewise(raw){
+  var pcs=parsePieces(raw);
+  if(!pcs.length) throw new Error('请输入函数表达式');
+  var fns=[], i;
+  for(i=0;i<pcs.length;i++){
+    fns.push({cf:pcs[i].cond?makeCondFn(normalizeCond(pcs[i].cond)):null,
+              vf:makeFnFromSource(normalizeExpr(pcs[i].expr))});
+  }
+  var fn=function(x){
+    for(var k=0;k<fns.length;k++){
+      if(fns[k].cf===null) return fns[k].vf(x);
+      var ok=false; try{ ok=fns[k].cf(x)===true; }catch(e){ ok=false; }
+      if(ok) return fns[k].vf(x);
+    }
+    return NaN;
+  };
+  fn.isPiecewise=true;
+  fn.pieces=pcs;
+  fn.pieceOf=function(x){
+    for(var k=0;k<fns.length;k++){
+      if(fns[k].cf===null) return k;
+      var ok=false; try{ ok=fns[k].cf(x)===true; }catch(e){ ok=false; }
+      if(ok) return k;
+    }
+    return -1;
+  };
+  return fn;
+}
+function compileExpr(raw){
+  if(isPiecewise(raw)) return compilePiecewise(raw);
+  return makeFnFromSource(normalizeExpr(raw));
+}
+function safeEval(f,x){ try{ var y=f(x); return (typeof y==='number'&&isFinite(y))?y:NaN; }catch(e){ return NaN; } }
+function sampleCurve(f,xmin,xmax,n){
+  var pts=[],i,x;
+  for(i=0;i<=n;i++){ x=xmin+(xmax-xmin)*i/n; pts.push({x:x,y:safeEval(f,x)}); }
+  return pts;
+}
+function limitValue(f,x){ var y=safeEval(f,x); return isFinite(y)?y:NaN; }
+
+// 判断序列是否"发散到无穷"：末几项严格变大
+function diverging(arr){
+  if(arr.length<4) return false;
+  var n=arr.length;
+  var v=[Math.abs(arr[n-4]),Math.abs(arr[n-3]),Math.abs(arr[n-2]),Math.abs(arr[n-1])];
+  if(!(v[3]>8)) return false;
+  return v[1]>v[0]*1.15 && v[2]>v[1]*1.15 && v[3]>v[2]*1.15;   // 连续单调变大 → 趋于无穷
+}
+// 振荡判据：只看最后 4 个采样值；单调序列属于“收敛/发散”，不算振荡
+function unstable(arr){
+  var n=arr.length;
+  if(n<3) return false;
+  var t=arr.slice(-4), up=true, dn=true, i;
+  for(i=1;i<t.length;i++){ if(t[i]<t[i-1]) up=false; if(t[i]>t[i-1]) dn=false; }
+  if(up||dn) return false;
+  var m=t.reduce(function(s,v){return s+v;},0)/t.length, mx=0;
+  for(i=0;i<t.length;i++) mx=Math.max(mx,Math.abs(t[i]-m));
+  return mx > 0.05*Math.max(1,Math.abs(m));
+}
+// Aitken Δ² 加速：不假设收敛阶，对 √h、h、h² 各类收敛都能修正（不稳定时退回原值）
+function sideExtrap(arr){
+  var n=arr.length;
+  if(n===0) return NaN;
+  if(n<3) return arr[n-1];
+  var v1=arr[n-3], v2=arr[n-2], v3=arr[n-1];
+  var d1=v2-v1, d2=v3-v2, dd=d2-d1;
+  if(!isFinite(dd) || Math.abs(dd) < 1e-12*Math.max(1,Math.abs(v3))) return v3;
+  var corr=d2*d2/dd;
+  if(!isFinite(corr) || Math.abs(corr) > 10*Math.abs(d2)+1e-12*Math.max(1,Math.abs(v3))) return v3;
+  return v3-corr;
+}
+function estimateLimit(f,a,opt){
+  opt=opt||{};
+  // h 从 0.1 缩到约 1e-4：既够精确，又不会因浮点相消而失效
+  var h0=opt.h0||0.1, k=opt.k||0.25, steps=opt.steps||6, i,h,vl,vr;
+  var allL=[],allR=[];
+  for(i=0;i<steps;i++){
+    h=h0*Math.pow(k,i);
+    if(a-h===a||a+h===a) continue;                // 超出浮点精度
+    vl=limitValue(f,a-h); vr=limitValue(f,a+h);
+    if(isFinite(vl)) allL.push(vl);
+    if(isFinite(vr)) allR.push(vr);
+  }
+  function kind(arr){ if(!arr.length) return 'missing'; if(diverging(arr)) return 'infinite';
+                      if(unstable(arr)) return 'unstable'; return 'finite'; }
+  function mean(arr){ return arr.reduce(function(s,v){return s+v;},0)/arr.length; }
+  var lk=kind(allL), rk=kind(allR);
+  var lv=sideExtrap(allL), rv=sideExtrap(allR);
+  if(lk==='infinite'&&allL.length){ lv=allL[allL.length-1]>0?Infinity:-Infinity; }
+  if(rk==='infinite'&&allR.length){ rv=allR[allR.length-1]>0?Infinity:-Infinity; }
+  var res={leftKind:lk,rightKind:rk,leftLimit:lv,rightLimit:rv,exists:false,L:NaN,note:''};
+  var relD=function(p,q){ return Math.abs(p-q)/Math.max(1,Math.abs(p),Math.abs(q)); };
+  if(lk==='missing'&&rk==='missing'){
+    res.note='函数在 x₀ 附近没有有限取值（可能处处无定义或恒为无穷）';
+  }else if(lk==='unstable'||rk==='unstable'){
+    res.note='函数在 x₀ 附近剧烈振荡，取值忽大忽小，不趋于任何固定值 → 极限不存在';
+    res.L=(isFinite(lv)?lv:0)+(isFinite(rv)?rv:0); res.L=isFinite(res.L)?res.L/2:0;
+  }else if(lk==='infinite'||rk==='infinite'){
+    var sg=function(t){ return t>0?'+∞':(t<0?'−∞':'∞'); };
+    if(lk==='infinite'&&rk==='infinite'){
+      res.note=((lv>0)===(rv>0))
+        ? ('两侧都趋于 '+sg(lv)+' → 极限不存在（称为无穷大）')
+        : ('左侧趋于 '+sg(lv)+'，右侧趋于 '+sg(rv)+'，方向不同 → 极限不存在');
+    }else if(lk==='infinite') res.note='左侧趋于 '+sg(lv)+' → 极限不存在（称为无穷大）';
+    else res.note='右侧趋于 '+sg(rv)+' → 极限不存在（称为无穷大）';
+    res.L=isFinite(lv)?lv:(isFinite(rv)?rv:0); res.L=isFinite(res.L)?res.L:0;
+  }else if(lk==='missing'||rk==='missing'){
+    res.note=(lk==='missing'?'左极限不存在（x₀ 左侧函数无定义）':'右极限不存在（x₀ 右侧函数无定义）');
+    res.L=isFinite(lv)?lv:rv;
+  }else if(relD(lv,rv)<1e-3){
+    res.exists=true; res.L=(lv+rv)/2; res.note='左右极限的数值估计一致 → 推测极限存在（数值估算，非证明）';
+  }else{
+    res.note='左右极限的数值估计不一致 → 推测极限不存在'; res.L=(lv+rv)/2;
+  }
+  if(!isFinite(res.L)) res.L=0;
+  if(Math.abs(res.L) < 1e-9) res.L = 0;
+  return res;
+}
+// δ 的上确界 = 距 x₀ 最近的"违例点"的距离（违例集 = {x: |f(x)−L| ≥ ε}）
+// δ 的上确界 = 离 x₀ 最近的“违例点”的距离。按 h 对数采样（兼顾 1e-9 与 halfRange），再局部细化
+function findMaxDelta(f,a,L,eps,halfRange){
+  if(!isFinite(L)||!(eps>0)) return {delta:0,found:false,violations:0};
+  var N=1200,i,h,x,y,minBad=Infinity;
+  var HMIN=1e-9*Math.max(1,Math.abs(a));
+  var ratio=Math.pow(halfRange/HMIN,1/N), hc=HMIN;
+  var bad=function(h){                       // h 处（两侧）是否有违例点（只看 f 有定义的点）
+    for(var s=-1;s<=1;s+=2){
+      var xx=a+s*h; if(xx===a) continue;
+      var yy=safeEval(f,xx);
+      if(!isFinite(yy)) continue;             // 定义域外的点不参与判定
+      if(Math.abs(yy-L)>=eps) return true;
+    }
+    return false;
+  };
+  for(i=0;i<=N;i++){ if(bad(hc)&&hc<minBad) minBad=hc; hc*=ratio; }
+  if(minBad<Infinity){                       // 在 (上一个采样点, minBad] 之间线性加密
+    var lo=minBad/ratio;
+    for(i=0;i<=400;i++){ h=lo+(minBad-lo)*i/400; if(bad(h)&&h<minBad) minBad=h; }
+    return {delta:minBad,found:true,violations:1};
+  }
+  return {delta:halfRange,found:true,violations:0};
+}
+function checkDelta(f,a,L,eps,delta){
+  if(!(delta>0)||!isFinite(L)) return {ok:false,badCount:-1,worstX:NaN,worstY:NaN,worstErr:NaN};
+  var n=6000,i,h,x,y,bad=0,worstX=NaN,worstY=NaN,maxErr=0;
+  for(i=0;i<=n;i++){
+    x=a-delta+2*delta*i/n; h=Math.abs(x-a);
+    if(h<1e-12) continue;
+    y=safeEval(f,x);
+    if(!isFinite(y)) continue;                  // 定义域外的点不参与判定
+    var err=Math.abs(y-L);
+    if(err>=eps){ bad++; if(bad===1||err>maxErr){ maxErr=err; worstX=x; worstY=y; } }
+  }
+  return {ok:bad===0,badCount:bad,worstX:worstX,worstY:worstY,worstErr:maxErr};
+}
+function niceTicks(lo,hi,target){
+  var span=hi-lo; if(!(span>0)||!isFinite(span)) return {ticks:[],step:1};
+  var raw=span/Math.max(1,target), mag=Math.pow(10,Math.floor(Math.log10(raw))), r=raw/mag, step;
+  step = r<1.5?1 : r<3?2 : r<7?5 : 10; step*=mag;
+  var out=[], v=Math.ceil(lo/step)*step, guard=0;
+  while(v<=hi+step*1e-9 && guard++<400){ out.push(Math.abs(v)<step*1e-9?0:v); v+=step; }
+  return {ticks:out,step:step};
+}
+function fmt(v,step){
+  if(!isFinite(v)) return v>0?'+∞':'−∞';
+  var d=Math.max(0,Math.min(8,-Math.floor(Math.log10(Math.abs(step||1e-3)))));
+  var s=v.toFixed(d);
+  if(s.indexOf('.')>=0) s=s.replace(/0+$/,'').replace(/\.$/,'');
+  return s==='-0'?'0':s;
+}
+function snapNice(v){
+  if(!isFinite(v)) return v;
+  var tbl=[0,1,-1,2,-2,0.5,-0.5,Math.PI,-Math.PI,Math.E,-Math.E,1/Math.E,1/3,2/3,1.5,3];
+  var best=v,bd=1e-6*Math.max(1,Math.abs(v));
+  for(var i=0;i<tbl.length;i++) if(Math.abs(v-tbl[i])<bd){ best=tbl[i]; bd=Math.abs(v-tbl[i]); }
+  return best;
+}
+function prettyValue(v){
+  var s=snapNice(v);
+  if(Math.abs(s-Math.PI)<1e-9) return 'π ≈ 3.14159';
+  if(Math.abs(s-Math.E)<1e-9) return 'e ≈ 2.71828';
+  if(Math.abs(s-1/Math.E)<1e-9) return '1/e ≈ 0.36788';
+  return (Math.abs(s)<1e-9?0:s).toPrecision(6).replace(/\.?0+$/,'');
+}
+var PRESETS=[
+  {n:'sin(x)/x  ·  x₀=0  两个重要极限之一',e:'sin(x)/x',a:0,r:6},
+  {n:'(1+x)^(1/x)  ·  x₀=0  极限是 e',e:'(1+x)^(1/x)',a:0,r:1.2},
+  {n:'(x²−1)/(x−1)  ·  x₀=1  可去间断点',e:'(x^2-1)/(x-1)',a:1,r:4},
+  {n:'(1−cos x)/x²  ·  x₀=0  极限 1/2',e:'(1-cos(x))/x^2',a:0,r:1.5},
+  {n:'x²  ·  x₀=1  最普通的连续函数',e:'x^2',a:1,r:4},
+  {n:'x²（x≠1），f(1)=5  ·  x₀=1  函数值 ≠ 极限',e:'x=1:5;else:x^2',a:1,r:4},
+  {n:'ln(x)  ·  x₀=1',e:'ln(x)',a:1,r:4},
+  {n:'|x|/x  ·  x₀=0  左右极限不等',e:'abs(x)/x',a:0,r:4},
+  {n:'1/x  ·  x₀=0  左→−∞，右→+∞',e:'1/x',a:0,r:4},
+  {n:'sin(1/x)  ·  x₀=0  无限振荡',e:'sin(1/x)',a:0,r:0.6},
+  {n:'x·sin(1/x)  ·  x₀=0  夹逼准则',e:'x*sin(1/x)',a:0,r:0.6},
+  {n:'√x  ·  x₀=0  只有右极限',e:'sqrt(x)',a:0,r:4},
+  {n:'eˣ  ·  x₀=0',e:'exp(x)',a:0,r:3}
+];
+// —— 数列极限 ——
+var SCAN_MAX=20000;   // 数列扫描/验证的最大项数（与界面 N 滑块上限保持一致）
+function estimateSeqLimit(f){
+  var grow=[], k, n, v, last=NaN;
+  for(k=3;k<=6;k++){ v=safeEval(f,Math.pow(10,k)); if(isFinite(v)){ grow.push(v); last=v; } }   // 跨量级看增长
+  if(diverging(grow)) return {L:last,exists:false,kind:'infinite',dir:(last>0?1:-1),
+    note:'aₙ '+(last>0?'越往后越大，趋于 +∞':'越往后越小，趋于 −∞')+' → 发散'};
+  var arr=[], h=1000;
+  for(k=0;k<7;k++){ v=safeEval(f,h); if(isFinite(v)) arr.push(v); h*=4; }   // 等比取点，误差才成等比
+  if(!arr.length) return {L:NaN,exists:false,kind:'missing',note:'n 很大时 aₙ 不是有限数'};
+  var L=sideExtrap(arr);
+  if(diverging(arr)){
+    var lv=arr[arr.length-1];
+    return {L:lv,exists:false,kind:'infinite',dir:(lv>0?1:-1),
+      note:'aₙ '+(lv>0?'越往后越大，趋于 +∞':'越往后越小，趋于 −∞')+' → 发散'};
+  }
+  // 跨很多个尺度（等比 2.5 倍、共 16 个）各取一段相邻项：抓“来回跳”、统计没定义的项、看各尺度均值是否稳定下来
+  var scales=[], q=1000, kk;
+  for(kk=0;kk<16;kk++){ scales.push(Math.round(q)); q*=2.5; }
+  var jump=0, bad=0, tot=0, means=[];
+  scales.forEach(function(base){
+    var vals=[], y;
+    for(n=base;n<base+8;n++){ y=safeEval(f,n); tot++; if(isFinite(y)) vals.push(y); else bad++; }
+    if(vals.length<2){ jump=Infinity; return; }
+    jump=Math.max(jump, Math.max.apply(null,vals)-Math.min.apply(null,vals));
+    means.push(vals.reduce(function(s,x){return s+x;},0)/vals.length);
+  });
+  if(bad > tot/3)
+    return {L:L,exists:false,kind:'missing',note:'n 很大时很多项都没有定义（不在实数范围内）→ 不能算作收敛'};
+  if(!isFinite(jump) || jump > 0.05*Math.max(1,Math.abs(L)))
+    return {L:L,exists:false,kind:'unstable',note:'n 很大时 aₙ 还在明显上下跳，不趋于固定数 → 发散'};
+  if(means.length>=3){          // 各尺度均值应越来越靠近同一个数；反反复复离开 = 振荡
+    var mLast=means[means.length-1], dj=[], j;
+    for(j=0;j<means.length;j++) dj.push(Math.abs(means[j]-mLast));
+    for(j=1;j<dj.length;j++) if(dj[j] > dj[j-1]*1.6 && dj[j] > 0.02*Math.max(1,Math.abs(mLast)))
+      return {L:L,exists:false,kind:'unstable',note:'在不同尺度上看，aₙ 没有越来越靠近同一个数（来回振荡）→ 发散'};
+  }
+  var eN=Math.abs(arr[arr.length-1]-L), eP=Math.abs(arr[arr.length-2]-L);
+  if(eN > 0.1*Math.max(1,Math.abs(L)) && eN > eP)
+    return {L:L,exists:false,kind:'unstable',note:'n 很大时 aₙ 与候选值 L 之间没有稳定缩小的趋势 → 不能确认收敛（按发散处理）'};
+  return {L:L,exists:true,kind:'finite',note:'n 足够大后 aₙ 稳定在 L 附近（数值估算）'};
+}
+// 从 N+1 项开始检查；没定义项也算“不满足”（极限要求充分大以后都有定义）
+function seqCheck(f,L,eps,N,top){
+  if(!isFinite(L)||!(eps>0)) return {ok:false,badCount:-1};
+  top=top||SCAN_MAX;
+  var n,y,bad=0;
+  for(n=N+1;n<=top;n++){ y=safeEval(f,n); if(!isFinite(y)||Math.abs(y-L)>=eps) bad++; }
+  return {ok:bad===0,badCount:bad};
+}
+// 最小的 N：扫描 1..scan，返回最后一个违例项的下标
+function minN(f,L,eps,scan){
+  if(!isFinite(L)||!(eps>0)) return 0;
+  scan=scan||SCAN_MAX;
+  var lastBad=0,n,y;
+  for(n=1;n<=scan;n++){ y=safeEval(f,n); if(!isFinite(y)||Math.abs(y-L)>=eps) lastBad=n; }
+  return lastBad;
+}
+var SEQ_PRESETS=[
+  {n:'(1+1/n)ⁿ  ·  收敛到 e',e:'(1+1/n)^n',nr:60},
+  {n:'(1−1/n)ⁿ  ·  收敛到 1/e',e:'(1-1/n)^n',nr:60},
+  {n:'1/n  ·  收敛到 0',e:'1/n',nr:40},
+  {n:'sin(n)/n  ·  收敛到 0',e:'sin(n)/n',nr:60},
+  {n:'(n²+1)/(2n²−3)  ·  收敛到 1/2',e:'(n^2+1)/(2*n^2-3)',nr:40},
+  {n:'√(n+1) − √n  ·  收敛到 0',e:'sqrt(n+1)-sqrt(n)',nr:60},
+  {n:'n/2ⁿ  ·  收敛到 0',e:'n/2^n',nr:40},
+  {n:'(−1)ⁿ  ·  发散（来回跳）',e:'(-1)^n',nr:40},
+  {n:'n²  ·  发散（趋于无穷）',e:'n^2',nr:40},
+  {n:'(n²−1)/(n+1) = n−1  ·  发散',e:'(n^2-1)/(n+1)',nr:40}
+];
+// —— 连续性 / 间断点 例子库 ——
+var CONT_PRESETS=[
+  {n:'(x²−1)/(x−1)  ·  x₀=1  可去间断（有洞）',e:'(x^2-1)/(x-1)',a:1,r:4},
+  {n:'sin(x)/x  ·  x₀=0  可去间断（无定义）',e:'sin(x)/x',a:0,r:6},
+  {n:'x=1:5; else:x²  ·  x₀=1  可去间断（值≠极限）',e:'x=1:5;else:x^2',a:1,r:4},
+  {n:'x<0:−1; x≥0:1  ·  x₀=0  跳跃间断（符号函数）',e:'x<0:-1;x>=0:1',a:0,r:4},
+  {n:'|x|/x  ·  x₀=0  跳跃间断',e:'abs(x)/x',a:0,r:4},
+  {n:'x<1:x; x≥1:x+1  ·  x₀=1  跳跃（台阶）',e:'x<1:x;x>=1:x+1',a:1,r:4},
+  {n:'1/x  ·  x₀=0  无穷间断 + 竖直渐近线',e:'1/x',a:0,r:4},
+  {n:'1/x²  ·  x₀=0  无穷间断（两侧都→+∞）',e:'1/x^2',a:0,r:3},
+  {n:'sin(1/x)  ·  x₀=0  振荡间断',e:'sin(1/x)',a:0,r:0.6},
+  {n:'√x  ·  x₀=0  单侧无定义（第二类）',e:'sqrt(x)',a:0,r:4},
+  {n:'x²  ·  x₀=1  连续',e:'x^2',a:1,r:4},
+  {n:'x<0:x; x≥0:x²  ·  x₀=0  分段但连续',e:'x<0:x;x>=0:x^2',a:0,r:4}
+];
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+// —— 表达式解析成树，只用于“分式化显示”（不影响任何计算）——
+function mathTokens(s){ return s.match(/[A-Za-z_][A-Za-z0-9_]*|\d+\.?\d*(?:[eE][+-]?\d+)?|\*\*|[-+*/%(),]/g)||[]; }
+function parseMath(src){
+  var tk=mathTokens(src), i=0;
+  function peek(){ return tk[i]; }
+  function eat(t){ if(tk[i]===t){ i++; return true; } return false; }
+  function expr(){
+    var n=term(), o;
+    while(peek()==='+'||peek()==='-'){ o=tk[i++]; n={t:'op',o:o,a:n,b:term()}; }
+    return n;
+  }
+  function term(){
+    var n=unary(), o;
+    while(peek()==='*'||peek()==='/'||peek()==='%'){ o=tk[i++]; n={t:'op',o:o,a:n,b:unary()}; }
+    return n;
+  }
+  function unary(){
+    if(peek()==='-'){ i++; return {t:'neg',a:unary()}; }
+    if(peek()==='+'){ i++; return unary(); }
+    var n=atom();
+    if(peek()==='**'){ i++; n={t:'op',o:'**',a:n,b:unary()}; }
+    return n;
+  }
+  function atom(){
+    var t=peek(), args, n;
+    if(t==null) throw new Error('表达式不完整');
+    if(/^[\d.]/.test(t)){ i++; return {t:'num',v:t}; }
+    if(/^[A-Za-z_]/.test(t)){
+      i++;
+      if(peek()==='('){
+        i++; args=[];
+        if(peek()!==')'){ args.push(expr()); while(eat(',')) args.push(expr()); }
+        if(!eat(')')) throw new Error('括号不配对');
+        return {t:'fn',name:t,args:args};
+      }
+      return {t:'var',v:t};
+    }
+    if(eat('(')){ n=expr(); if(!eat(')')) throw new Error('括号不配对'); return n; }
+    throw new Error('无法解析：'+t);
+  }
+  var root=expr();
+  if(i<tk.length) throw new Error('有多余的符号');
+  return root;
+}
+function mathPrec(n){ return n.t==='op' ? ({'+':1,'-':1,'*':2,'/':2,'%':2,'**':3}[n.o]||0) : 9; }
+function mathR(n,minp,html){
+  var h=mathRaw(n,html);
+  return (mathPrec(n)<minp) ? '('+h+')' : h;
+}
+function mathRaw(n,html){
+  var i, parts, up, dn;
+  switch(n.t){
+    case 'num': return html?esc(n.v):n.v;
+    case 'var': return (n.v==='PI'?'π':(n.v==='E'?'e':(html?esc(n.v):n.v)));
+    case 'neg': return '−'+mathR(n.a,2,html);
+    case 'fn':
+      parts=[];
+      for(i=0;i<n.args.length;i++) parts.push(mathR(n.args[i],0,html));
+      return (html?esc(n.name):n.name)+'('+parts.join(', ')+')';
+    case 'op':
+      if(n.o==='/'){
+        up=mathR(n.a,2,html); dn=mathR(n.b,2,html);
+        return html ? ('<span class="frac"><span class="nu">'+up+'</span><span class="de">'+dn+'</span></span>')
+                    : ('['+up+'/'+dn+']');
+      }
+      if(n.o==='**'){
+        var base=(n.a.t==='op'&&n.a.o==='/') ? mathRaw(n.a,html) : (n.a.t==='neg' ? '('+mathRaw(n.a,html)+')' : mathR(n.a,4,html));
+        var ex=(n.b.t==='op'&&n.b.o==='/') ? mathRaw(n.b,html) : mathR(n.b,3,html);
+        return base+(html?'<sup>':'^')+ex+(html?'</sup>':'');
+      }
+      if(n.o==='*') return mathR(n.a,2,html)+(html?'·':'*')+mathR(n.b,2,html);
+      if(n.o==='%') return mathR(n.a,2,html)+' mod '+mathR(n.b,3,html);   // 右操作数同级也要括号
+      return mathR(n.a,1,html)+' '+(n.o==='+'?'+':'−')+' '+mathR(n.b,2,html);
+  }
+  return '';
+}
+function mathToHTML(src){ return mathR(parseMath(normalizeExpr(src)),0,true); }
+function mathToText(src){ return mathR(parseMath(normalizeExpr(src)),0,false); }
+// 分段函数的“显示为”：先用现有的数学渲染把每一段画出来，再用大括号拼起来
+function previewHTML(src){
+  var s=String(src==null?'':src);
+  if(!isPiecewise(s)) return mathToHTML(s);
+  var pcs=parsePieces(s), rows=[], i;
+  for(i=0;i<pcs.length;i++){
+    var vh; try{ vh=mathToHTML(pcs[i].expr); }catch(e){ vh=esc(pcs[i].expr); }
+    var cond=pcs[i].cond?('当 '+esc(pcs[i].cond.replace(/\s+/g,'')) ):'其它';
+    rows.push('<div style="line-height:1.6"><span style="color:#2b6cb0;font-size:12.5px;font-family:\'Microsoft YaHei\'">'+cond+'</span> &nbsp;→&nbsp; '+vh+'</div>');
+  }
+  return '<span style="font-size:13px;font-family:\'Microsoft YaHei\'">分段函数：<br>'+rows.join('')+'</span>';
+}
+
+// ===== 连续性 / 间断点分类（判定内核，与界面无关） =====
+function classifyCont(f,a){
+  var m=estimateLimit(f,a);
+  var v0=safeEval(f,a);
+  var hasV=isFinite(v0);
+  var lv=m.leftLimit, rv=m.rightLimit, L=m.L, tol=1e-3*Math.max(1,Math.abs(L));
+  var lf=m.leftKind==='finite', rf=m.rightKind==='finite';
+  var o={m:m,v0:v0,hasV:hasV,lv:lv,rv:rv,L:L,Lstr:'',type:'',reason:'',pluggable:false};
+  var sg=function(t){ return isFinite(t)?prettyValue(t):(t>0?'+∞':'−∞'); };
+  if(m.leftKind==='missing'&&m.rightKind==='missing'){
+    o.type='nodef'; o.reason='x₀ 两侧的函数都没有有限取值，x₀ 不是通常意义下的间断点（先确认函数在 x₀ 附近有定义）';
+  }else if(lf&&rf&&m.exists){
+    if(hasV&&Math.abs(v0-L)<tol){
+      o.type='continuous';
+      o.reason='左极限 = 右极限 = f(x₀) = '+sg(L)+'（三者相等）→ 三要素齐备，函数在 x₀ 处连续';
+    }else if(!hasV){
+      o.type='removable'; o.pluggable=true;
+      o.reason='左极限 = 右极限 = '+sg(L)+'，但 f(x₀) 没有定义 → 只要补上 f(x₀) = '+sg(L)+'，函数就变连续（可去间断点）';
+    }else{
+      o.type='removable'; o.pluggable=true;
+      o.reason='左极限 = 右极限 = '+sg(L)+'，但 f(x₀) = '+sg(v0)+' ≠ 极限值 → 把 f(x₀) 改成 '+sg(L)+' 即可去掉间断（可去间断点）';
+    }
+  }else if(lf&&rf){
+    o.type='jump';
+    o.reason='左极限 = '+sg(lv)+'，右极限 = '+sg(rv)+'，两者都存在但不相等 → 跳跃间断点（第一类）';
+  }else if(m.leftKind==='infinite'||m.rightKind==='infinite'){
+    o.type='infinite';
+    var sideTxt=function(kind,v){
+      if(kind==='infinite') return (v>0?'+∞':'−∞');
+      if(kind==='finite') return prettyValue(v);
+      if(kind==='unstable') return '不存在（振荡）';
+      return '不存在';
+    };
+    o.reason='至少一侧极限趋于无穷（左侧 '+sideTxt(m.leftKind,lv)+'，右侧 '+sideTxt(m.rightKind,rv)+'）→ 无穷间断点（第二类）';
+  }else if(m.leftKind==='unstable'||m.rightKind==='unstable'){
+    o.type='oscillate';
+    o.reason='至少一侧极限不存在且在剧烈振荡 → 振荡间断点（第二类）';
+  }else{
+    o.type='second';
+    o.reason='有一侧在 x₀ 附近没有定义（'+(m.leftKind==='missing'?'左侧':'右侧')+'无定义）→ 极限不存在，属第二类间断（单侧无定义）';
+  }
+  return o;
+}
+function contTypeName(t){
+  return ({continuous:'连续',removable:'可去间断点（第一类）',jump:'跳跃间断点（第一类）',
+    infinite:'无穷间断点（第二类）',oscillate:'振荡间断点（第二类）',second:'第二类间断（单侧无定义）',nodef:'不是间断点'}[t])||t;
+}
+//==CORE-END==
+
+/* ================== 界面部分 ================== */
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  var cv=$('cv'), ctx=cv.getContext('2d');
+  var S={ mode:'fn', expr:'sin(x)/x', expr2:'(1+1/n)^n', expr3:'(x^2-1)/(x-1)', f:null, fSeq:null, f3:null,
+          a:0, a3:1, eps:0.2, delta:0.5, N:10, plugT:0, showInv:false,
+          view:{xmin:-6,xmax:6,ymin:-1.5,ymax:2.5}, lim:null, seqLim:null, cont:null, autoY:true, limDirty:true };
+  var EPS_MIN=1e-3, EPS_MAX=2;
+  var t2eps=function(t){ return EPS_MIN*Math.pow(EPS_MAX/EPS_MIN, t); };   // 对数刻度
+  var eps2t=function(e){ return Math.log(e/EPS_MIN)/Math.log(EPS_MAX/EPS_MIN); };
+
+  function dpr(){ return Math.min(2,window.devicePixelRatio||1); }
+  function resize(){
+    var r=cv.getBoundingClientRect(), d=dpr();
+    cv.width=Math.max(320,Math.round(r.width*d)); cv.height=Math.round(r.height*d);
+    ctx.setTransform(d,0,0,d,0,0);
+    S.W=r.width; S.H=r.height; draw();
+  }
+  var X=function(x){ return (x-S.view.xmin)/(S.view.xmax-S.view.xmin)*S.W; };
+  var Y=function(y){ return S.H-(y-S.view.ymin)/(S.view.ymax-S.view.ymin)*S.H; };
+  var invX=function(px){ return S.view.xmin+px/S.W*(S.view.xmax-S.view.xmin); };
+  var invY=function(py){ return S.view.ymin+(S.H-py)/S.H*(S.view.ymax-S.view.ymin); };
+
+  function autoFitY(){
+    if(!S.f) return;
+    var pts=sampleCurve(S.f,S.view.xmin,S.view.xmax,800), ys=[];
+    for(var i=0;i<pts.length;i++) if(isFinite(pts[i].y)) ys.push(pts[i].y);
+    var lo=-1,hi=1;
+    if(ys.length>6){
+      ys.sort(function(p,q){return p-q;});
+      var k=Math.floor(ys.length*0.04);
+      lo=ys[k]; hi=ys[ys.length-1-k];
+      if(!(hi>lo)){ lo=ys[0]; hi=ys[ys.length-1]; }
+    }
+    var e=Math.max(S.eps*2,0.001);
+    var hasL=S.lim&&S.lim.exists&&isFinite(S.lim.L);
+    if(hasL){ lo=Math.min(lo,S.lim.L-e); hi=Math.max(hi,S.lim.L+e); }
+    var pad=0.12*(hi-lo)+1e-6; lo-=pad; hi+=pad;
+    var cx=hasL?S.lim.L:0;
+    lo=Math.max(lo,cx-6*Math.max(1,hi-lo)); hi=Math.min(hi,cx+6*Math.max(1,hi-lo));
+    S.view.ymin=lo; S.view.ymax=hi;
+  }
+  function fitAll(){
+    var keep=S.a, r=(S.r0!=null?S.r0:6);
+    S.view.xmin=keep-r; S.view.xmax=keep+r; autoFitY();
+  }
+
+  function recompute(){
+    try{
+      S.f=compileExpr(S.expr); $('exprErr').textContent='';
+    }catch(err){ S.f=null; $('exprErr').textContent='⚠ '+err.message; }
+    S.lim=S.f?estimateLimit(S.f,S.a):{L:0,exists:false,note:'表达式有误',leftKind:'missing',rightKind:'missing'};
+    S.limDirty=false;
+  }
+
+  function fixView(){                 // 防止极端取值把视图压成 0（导致坐标 NaN、图空白）
+    var v=S.view;
+    if(!isFinite(v.xmin)||!isFinite(v.xmax)||!(v.xmax-v.xmin>0)){
+      if(S.mode==='seq'){ v.xmin=0; v.xmax=40; }
+      else { var c=isFinite(S.mode==='cont'?S.a3:S.a)?(S.mode==='cont'?S.a3:S.a):0; v.xmin=c-6; v.xmax=c+6; }
+    }
+    if(!isFinite(v.ymin)||!isFinite(v.ymax)||!(v.ymax-v.ymin>0)){ v.ymin=-1; v.ymax=1; }
+  }
+  function updatePreview(){
+    var id=(S.mode==='seq')?'mathPrev2':(S.mode==='cont'?'mathPrev3':'mathPrev');
+    var src=(S.mode==='seq')?S.expr2:(S.mode==='cont'?S.expr3:S.expr);
+    var el=$(id); if(!el) return;
+    var head='<span class="lbl">显示为</span>';
+    try{ el.innerHTML=head+previewHTML(src); }
+    catch(err){ el.innerHTML=head+'<span style="font-family:sans-serif;font-size:13px;color:#33455f">'+esc(src)+'</span>'; }
+  }
+  function draw(){
+    if(!(S.W>0&&S.H>0)) return;              // 画布尺寸还没就绪
+    fixView();
+    updatePreview();                         // 先刷新“显示为”（表达式非法时也能显示原文）
+    if(S.mode==='seq'){ drawSeq(); return; }
+    if(S.mode==='cont'){ drawCont(); return; }
+    ctx.fillStyle='#fbfdff'; ctx.fillRect(0,0,S.W,S.H);
+    var v=S.view, W=S.W, H=S.H;
+    var xt=niceTicks(v.xmin,v.xmax,Math.round(W/90)), yt=niceTicks(v.ymin,v.ymax,Math.round(H/60));
+    // 网格
+    ctx.lineWidth=1; ctx.strokeStyle='#e4ebf5'; ctx.beginPath();
+    xt.ticks.forEach(function(t){ var px=Math.round(X(t))+.5; ctx.moveTo(px,0); ctx.lineTo(px,H); });
+    yt.ticks.forEach(function(t){ var py=Math.round(Y(t))+.5; ctx.moveTo(0,py); ctx.lineTo(W,py); });
+    ctx.stroke();
+    // 坐标轴
+    ctx.strokeStyle='#5b6b82'; ctx.lineWidth=1.6; ctx.beginPath();
+    if(v.ymin<0&&v.ymax>0){ var y0=Math.round(Y(0))+.5; ctx.moveTo(0,y0); ctx.lineTo(W,y0); }
+    if(v.xmin<0&&v.xmax>0){ var x0=Math.round(X(0))+.5; ctx.moveTo(x0,0); ctx.lineTo(x0,H); }
+    ctx.stroke();
+    // 刻度数字
+    ctx.fillStyle='#5b6675'; ctx.font='12px Consolas,monospace';
+    ctx.textAlign='center'; ctx.textBaseline='top';
+    xt.ticks.forEach(function(t){ if(t===0&&v.ymin<0&&v.ymax>0) return;
+      ctx.fillText(fmt(t,xt.step),X(t),Math.min(H-14,Math.max(2,Y(0)+4))); });
+    ctx.textAlign='right'; ctx.textBaseline='middle';
+    yt.ticks.forEach(function(t){ if(t===0) return; ctx.fillText(fmt(t,yt.step),Math.min(W-4,Math.max(34,X(0)-6)),Y(t)); });
+
+    if(!S.f){ ctx.fillStyle='#c53030'; ctx.font='15px sans-serif'; ctx.textAlign='center';
+      ctx.fillText('表达式有误，请检查左侧输入',W/2,H/2);
+      $('stats').innerHTML='<span class="hint">表达式无法解析，请检查函数写法。</span>';
+      $('defLine').innerHTML=''; $('coach').textContent='先在左上角输入一个合法的 f(x)，例如 sin(x)/x。'; return; }
+
+    var L=S.lim.L, eps=S.eps, delta=S.delta;
+    var hasL=isFinite(L)&&S.lim.exists;   // 极限不存在时不画 ε 带/极限点，免得误导
+    // ε 带
+    if(hasL){
+      ctx.fillStyle='rgba(47,133,90,.19)';
+      ctx.fillRect(0,Y(L+eps),W,Y(L-eps)-Y(L+eps));
+      ctx.strokeStyle='rgba(47,133,90,.75)'; ctx.lineWidth=1.2; ctx.setLineDash([6,4]);
+      ctx.beginPath(); ctx.moveTo(0,Y(L+eps)); ctx.lineTo(W,Y(L+eps));
+      ctx.moveTo(0,Y(L-eps)); ctx.lineTo(W,Y(L-eps)); ctx.stroke(); ctx.setLineDash([]);
+    }
+    // δ 带
+    ctx.fillStyle='rgba(43,108,176,.17)';
+    ctx.fillRect(X(S.a-delta),0,X(S.a+delta)-X(S.a-delta),H);
+    ctx.strokeStyle='rgba(43,108,176,.8)'; ctx.lineWidth=1.2; ctx.setLineDash([6,4]);
+    ctx.beginPath(); ctx.moveTo(X(S.a-delta),0); ctx.lineTo(X(S.a-delta),H);
+    ctx.moveTo(X(S.a+delta),0); ctx.lineTo(X(S.a+delta),H); ctx.stroke(); ctx.setLineDash([]);
+
+    // 曲线：按"是否在 δ 带内 / 是否在 ε 带内"分色
+    var n=Math.max(900,Math.round(W*1.6)), pts=sampleCurve(S.f,v.xmin,v.xmax,n), i,p,q;
+    var jump=0.85*(v.ymax-v.ymin);
+    var paths={out:new Path2D(),ok:new Path2D(),bad:new Path2D()};
+    for(i=0;i<pts.length-1;i++){
+      p=pts[i]; q=pts[i+1];
+      if(!isFinite(p.y)||!isFinite(q.y)) continue;
+      if(Math.abs(q.y-p.y)>jump) continue;                       // 断裂/渐近线
+      var mid=(p.x+q.x)/2, my=(p.y+q.y)/2;
+      var inD=Math.abs(mid-S.a)<delta, inE=hasL&&Math.abs(my-L)<eps;
+      var cls = !inD?'out' : (inE?'ok':'bad');
+      var P=paths[cls]; P.moveTo(X(p.x),Y(p.y)); P.lineTo(X(q.x),Y(q.y));
+    }
+    ctx.lineWidth=2.6; ctx.lineCap='round';
+    ctx.strokeStyle='#718096'; ctx.stroke(paths.out);
+    ctx.strokeStyle='#c53030'; ctx.stroke(paths.bad);
+    ctx.strokeStyle='#2f855a'; ctx.lineWidth=3; ctx.stroke(paths.ok);
+
+    // 反函数：把曲线沿 y = x 翻折（点 (x,y) → (y,x)，不需要求出反函数表达式）
+    if(S.showInv){
+      var pinv=new Path2D();
+      for(i=0;i<pts.length-1;i++){
+        p=pts[i]; q=pts[i+1];
+        if(!isFinite(p.y)||!isFinite(q.y)) continue;
+        if(Math.abs(q.y-p.y)>jump) continue;
+        pinv.moveTo(X(p.y),Y(p.x)); pinv.lineTo(X(q.y),Y(q.x));
+      }
+      ctx.strokeStyle='#dd6b20'; ctx.lineWidth=2.2; ctx.stroke(pinv);
+      var d0=Math.max(v.xmin,v.ymin), d1=Math.min(v.xmax,v.ymax);
+      if(d1>d0){
+        ctx.strokeStyle='rgba(221,107,32,.5)'; ctx.lineWidth=1.2; ctx.setLineDash([5,5]);
+        ctx.beginPath(); ctx.moveTo(X(d0),Y(d0)); ctx.lineTo(X(d1),Y(d1)); ctx.stroke(); ctx.setLineDash([]);
+      }
+      ctx.fillStyle='#dd6b20'; ctx.font='12px "Microsoft YaHei"'; ctx.textAlign='left'; ctx.textBaseline='top';
+      ctx.fillText('橙色 = 关于 y=x 的对称曲线',10,8);
+    }
+
+    // 违例点
+    var chk=checkDelta(S.f,S.a,hasL?L:NaN,eps,delta);
+    if(!chk.ok&&isFinite(chk.worstX)&&isFinite(chk.worstY)){
+      ctx.fillStyle='#c53030'; ctx.beginPath(); ctx.arc(X(chk.worstX),Y(chk.worstY),4.5,0,6.3); ctx.fill();
+      ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(X(chk.worstX),Y(chk.worstY),1.8,0,6.3); ctx.fill();
+      ctx.fillStyle='#c53030'; ctx.font='12px "Microsoft YaHei"'; ctx.textAlign='left'; ctx.textBaseline='bottom';
+      ctx.fillText('最远跑出 '+chk.worstErr.toFixed(3)+'（应 <'+eps.toFixed(3)+'）',
+                   X(chk.worstX)+8, Y(chk.worstY)-6);
+    }
+    // ε 带 × δ 带的“矩形框”（明确画出交集的范围）
+    if(hasL){
+      var rx1=X(S.a-delta), rx2=X(S.a+delta), ry1=Y(L+eps), ry2=Y(L-eps);
+      var ryt=Math.min(ry1,ry2), ryh=Math.abs(ry2-ry1);
+      ctx.strokeStyle='rgba(43,108,176,.95)'; ctx.lineWidth=1.8;
+      ctx.strokeRect(rx1,ryt,rx2-rx1,ryh);
+      ctx.fillStyle='#2b6cb0'; ctx.font='12px "Microsoft YaHei"'; ctx.textAlign='left'; ctx.textBaseline='bottom';
+      ctx.fillText('矩形框 = ε 带 × δ 带',rx1+6,ryt-4);
+    }
+    // 极限点 (x₀, L)：f(x₀) 与 L 相等 → 实心（连续）；不等/无定义 → 空心（强调“去心”）
+    if(hasL){
+      var px=X(S.a), py=Y(L);
+      var v0=safeEval(S.f,S.a), hv0=isFinite(v0), nearL=hv0&&(Math.abs(v0-L)<=1e-6*Math.max(1,Math.abs(L))+1e-9);
+      ctx.strokeStyle='#1e2430'; ctx.lineWidth=1.5; ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(px,Y(v.ymin)); ctx.stroke(); ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(px,py,5.5,0,6.3);
+      if(nearL){ ctx.fillStyle='#1e2430'; ctx.fill(); }
+      else { ctx.fillStyle='#fff'; ctx.fill(); ctx.strokeStyle='#1e2430'; ctx.lineWidth=2.2; ctx.stroke(); }
+      ctx.fillStyle='#1e2430'; ctx.font='12px Consolas,monospace';
+      ctx.textAlign='left'; ctx.textBaseline='top';
+      var vt=(nearL?'实心：f(x₀)=L，连续' : (hv0?('空心：f(x₀)='+prettyValue(v0)+' ≠ L，去心'):'空心：f(x₀) 无定义，去心'));
+      ctx.fillText('(x₀, L) = ('+fmt(S.a,0.01)+', '+fmt(L,0.01)+')  '+vt,px+9,py+8);
+    }
+
+    updateStats(chk);
+  }
+
+  function sideText(kind,v){
+    if(kind==='missing') return '<span class="badge b-warn">不存在</span>';
+    if(kind==='infinite') return '<span class="badge b-bad">'+(v>0?'+∞':(v<0?'−∞':'∞'))+'</span>';
+    if(kind==='unstable') return '<span class="badge b-bad">振荡</span>';
+    return '<b>'+prettyValue(v)+'</b>';
+  }
+  function updateStats(chk){
+    var m=S.lim, L=m.L;
+    var box='';
+    box+='左极限：'+sideText(m.leftKind,m.leftLimit)+'<br>';
+    box+='右极限：'+sideText(m.rightKind,m.rightLimit)+'<br>';
+    box+='极限 L = '+(m.exists?'<b style="color:#2f855a">'+prettyValue(L)+'</b> <span class="hint">数值估算</span>':'<b style="color:#c53030">不存在</b>')+'<br>';
+    box+='<span class="hint">'+m.note+'</span><br><br>';
+    var r=Math.max(0.05,(S.r0||6));
+    var dmax=findMaxDelta(S.f,S.a,L,S.eps,r).delta;
+    box+='ε = <b>'+S.eps.toFixed(3)+'</b>，δ = <b>'+S.delta.toFixed(3)+'</b><br>';
+    box+='这个 ε 下，δ 大约可取到 '+(dmax<1e-6?'<b>0（采样范围内没有可用的正 δ）</b>':'<b>'+dmax.toFixed(3)+'</b>')+'（采样估算）<br>';
+    box+='结果：'+(chk.ok
+      ? '<span class="badge b-ok">✓ 采样范围内未发现违例</span>'
+      : '<span class="badge b-bad">✗ 采样发现 '+chk.badCount+' 个点跑出去</span>');
+    if(chk.ok&&S.delta<dmax*0.999)
+      box+='<br><span class="hint">δ 还能放大到 '+dmax.toFixed(3)+'，说明 δ 不唯一。</span>';
+    $('stats').innerHTML=box;
+
+    var d=$('defLine');
+    d.innerHTML='<b>极限定义：</b>对任意 ε&gt;0，都存在 δ&gt;0，使得当 0&lt;|x−x₀|&lt;δ 时，|f(x)−L|&lt;ε。<br><br>'+
+      '当前取值：ε = '+S.eps.toFixed(3)+'，δ = '+S.delta.toFixed(3)+
+      '，x₀ = '+fmt(S.a,0.01)+'，L = '+prettyValue(L)+'（数值估算）<br>'+
+      '⇒ 蓝带内 |f(x) − '+prettyValue(L)+'| '+
+      (chk.ok?'<span class="badge b-ok">&lt; ε（采样未发现例外）✓</span>':'<span class="badge b-bad">有超出 ε 的地方 ✗</span>');
+
+    var coach;
+    if(m.exists){
+      coach='✅ 极限存在，L = '+prettyValue(L)+'（程序数值估算，不是证明）。把 ε 拖小，绿带变窄；通常要把 δ 也取小一些，曲线才能继续落在绿带里（原来的 δ 如果还够用，也可以不变）—— 这就是“δ 依赖 ε”。';
+    }else{
+      coach='❌ '+m.note+'。当前采样下，δ 再小也能找到跑出 ε 带的点 —— 数值上推测极限不存在（不是证明）。';
+    }
+    $('coach').textContent=coach;
+  }
+
+  /* ---------- 数列极限模式 ---------- */
+  function syncEpsUI(){
+    S.eps=Math.max(EPS_MIN,Math.min(EPS_MAX,S.eps));
+    try{ $('epsRange').value=eps2t(S.eps); $('epsLbl').textContent=S.eps.toFixed(3); }catch(e){}
+    try{ $('epsRange2').value=eps2t(S.eps); $('epsLbl2').textContent=S.eps.toFixed(3); }catch(e){}
+  }
+  function exportPNG(){
+    var a=document.createElement('a');
+    a.download=(S.mode==='seq'
+      ? '数列极限_N='+S.N+'_eps='+S.eps.toFixed(3)
+      : S.mode==='cont'
+        ? '连续性与间断点_x0='+S.a3+'_'+(S.cont?contTypeName(S.cont.type):'')
+        : '函数极限_x0='+S.a+'_eps='+S.eps.toFixed(3)+'_delta='+S.delta.toFixed(3))+'.png';
+    a.href=cv.toDataURL('image/png'); a.click();
+  }
+  function recomputeSeq(){
+    try{ S.fSeq=compileExpr(S.expr2); $('exprErr2').textContent=''; }
+    catch(err){ S.fSeq=null; $('exprErr2').textContent='⚠ '+err.message; }
+    S.seqLim=S.fSeq?estimateSeqLimit(S.fSeq):{L:NaN,exists:false,kind:'missing',note:'表达式有误'};
+  }
+  function autoFitYSeq(){
+    if(!S.fSeq) return;
+    var ys=[],n,to=Math.min(400,Math.max(5,Math.floor(S.view.xmax))),y;
+    for(n=1;n<=to;n++){ y=safeEval(S.fSeq,n); if(isFinite(y)) ys.push(y); }
+    var lo=-1,hi=1;
+    if(ys.length>4){
+      ys.sort(function(a,b){return a-b;});
+      var k=Math.floor(ys.length*0.03); lo=ys[k]; hi=ys[ys.length-1-k];
+    }
+    if(!(hi>lo)){ lo-=0.5; hi+=0.5; }
+    if(S.seqLim&&S.seqLim.exists&&isFinite(S.seqLim.L)){
+      var e=Math.max(S.eps*2,0.001);
+      lo=Math.min(lo,S.seqLim.L-e); hi=Math.max(hi,S.seqLim.L+e);
+    }
+    var pad=0.12*(hi-lo)+1e-6;
+    S.view.ymin=lo-pad; S.view.ymax=hi+pad;
+  }
+  function loadSeq(p){
+    if(!p) return;
+    S.expr2=p.e; $('expr2').value=p.e; S.r0Seq=p.nr;
+    recomputeSeq();
+    S.view.xmin=0; S.view.xmax=p.nr;
+    autoFitYSeq();
+    var need=(S.fSeq&&S.seqLim.exists)?minN(S.fSeq,S.seqLim.L,S.eps):0;
+    var mx=setNRange(need);
+    var n=Math.max(1,Math.min(mx,Math.round(need*0.5)||1));
+    S.N=n; $('nRange').value=n; $('nLbl').textContent=n;
+    draw();
+  }
+  function setMode(m){
+    if(m===S.mode) return;
+    if(S.mode==='fn') S.viewFn=Object.assign({},S.view);
+    else if(S.mode==='seq') S.viewSeq=Object.assign({},S.view);
+    else S.viewCont=Object.assign({},S.view);
+    S.mode=m;
+    $('panelFn').style.display=(m==='fn'?'':'none');
+    $('panelSeq').style.display=(m==='seq'?'':'none');
+    $('panelCont').style.display=(m==='cont'?'':'none');
+    if($('legendFn')) $('legendFn').style.display=(m==='cont'?'none':'');
+    if($('legendCont')) $('legendCont').style.display=(m==='cont'?'':'none');
+    $('tabFn').className='tab'+(m==='fn'?' active':'');
+    $('tabSeq').className='tab'+(m==='seq'?' active':'');
+    $('tabCont').className='tab'+(m==='cont'?' active':'');
+    $('stageHint').textContent=(m==='cont')
+      ? '拖动平移 · 滚轮/双指缩放 · 空心=取不到，实心=取得到'
+      : (m==='seq'?'拖动平移 · 滚轮/双指缩放 · 绿带 = ε':'拖动平移 · 滚轮/双指缩放 · 绿带 = ε，蓝带 = δ');
+    if(!S.expr2) S.expr2=$('expr2').value;
+    if(!S.expr3) S.expr3=$('expr3').value;
+    if(m==='seq'){
+      S.view=S.viewSeq?Object.assign({},S.viewSeq):{xmin:0,xmax:60,ymin:-1,ymax:2};
+      recomputeSeq(); autoFitYSeq();
+      S.N=Math.max(1,Math.min(200,S.N));
+      $('nRange').value=S.N; $('nLbl').textContent=S.N;
+    }else if(m==='cont'){
+      S.view=S.viewCont?Object.assign({},S.viewCont):{xmin:S.a3-4,xmax:S.a3+4,ymin:-2,ymax:3};
+      recompute3(); autoFitYCont();
+    }else{
+      S.view=S.viewFn?Object.assign({},S.viewFn):{xmin:-6,xmax:6,ymin:-1.5,ymax:2.5};
+    }
+    syncEpsUI();
+    draw();
+  }
+  function drawSeq(){
+    ctx.fillStyle='#fbfdff'; ctx.fillRect(0,0,S.W,S.H);
+    var v=S.view, W=S.W, H=S.H;
+    var xt=niceTicks(v.xmin,v.xmax,Math.round(W/90)), yt=niceTicks(v.ymin,v.ymax,Math.round(H/60));
+    ctx.lineWidth=1; ctx.strokeStyle='#e4ebf5'; ctx.beginPath();
+    xt.ticks.forEach(function(t){ var px=Math.round(X(t))+.5; ctx.moveTo(px,0); ctx.lineTo(px,H); });
+    yt.ticks.forEach(function(t){ var py=Math.round(Y(t))+.5; ctx.moveTo(0,py); ctx.lineTo(W,py); });
+    ctx.stroke();
+    ctx.strokeStyle='#5b6b82'; ctx.lineWidth=1.6; ctx.beginPath();
+    if(v.ymin<0&&v.ymax>0){ var y0=Math.round(Y(0))+.5; ctx.moveTo(0,y0); ctx.lineTo(W,y0); }
+    ctx.moveTo(X(0),0); ctx.lineTo(X(0),H);
+    ctx.stroke();
+    ctx.fillStyle='#5b6675'; ctx.font='12px Consolas,monospace';
+    ctx.textAlign='center'; ctx.textBaseline='top';
+    xt.ticks.forEach(function(t){ if(t===0) return; ctx.fillText(fmt(t,xt.step),X(t),Math.min(H-14,Math.max(2,Y(0)+4))); });
+    ctx.textAlign='right'; ctx.textBaseline='middle';
+    yt.ticks.forEach(function(t){ if(t===0) return; ctx.fillText(fmt(t,yt.step),Math.min(W-4,Math.max(34,X(0)-6)),Y(t)); });
+    ctx.fillStyle='#5b6675'; ctx.font='12px "Microsoft YaHei"';
+    ctx.textAlign='right'; ctx.textBaseline='bottom'; ctx.fillText('n',W-7,H-5);
+
+    if(!S.fSeq){
+      ctx.fillStyle='#c53030'; ctx.font='15px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('数列表达式有误，请检查左侧输入',W/2,H/2);
+      $('stats').innerHTML='<span class="hint">表达式无法解析，请检查写法。</span>';
+      $('defLine').innerHTML=''; $('coach').textContent='先在左边输入一个合法的 aₙ，例如 1/n。'; return;
+    }
+    var m=S.seqLim||{L:NaN,exists:false}, L=m.L, eps=S.eps, N=S.N;
+    var hasL=m.exists&&isFinite(L);
+    if(hasL){
+      ctx.fillStyle='rgba(47,133,90,.19)'; ctx.fillRect(0,Y(L+eps),W,Y(L-eps)-Y(L+eps));
+      ctx.strokeStyle='rgba(47,133,90,.75)'; ctx.lineWidth=1.2; ctx.setLineDash([6,4]);
+      ctx.beginPath(); ctx.moveTo(0,Y(L+eps)); ctx.lineTo(W,Y(L+eps));
+      ctx.moveTo(0,Y(L-eps)); ctx.lineTo(W,Y(L-eps)); ctx.stroke(); ctx.setLineDash([]);
+    }
+    var xN=X(N);
+    ctx.fillStyle='rgba(120,130,150,.14)'; ctx.fillRect(0,0,xN,H);
+    ctx.strokeStyle='#b7791f'; ctx.lineWidth=1.5; ctx.setLineDash([6,4]);
+    ctx.beginPath(); ctx.moveTo(xN,0); ctx.lineTo(xN,H); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle='#b7791f'; ctx.font='12px Consolas,monospace'; ctx.textAlign='left'; ctx.textBaseline='top';
+    ctx.fillText('N = '+N+'（n ≤ N 不保证）',xN+6,8);
+    var n0=Math.max(1,Math.ceil(v.xmin)), n1=Math.min(4000,Math.floor(v.xmax)), n, y, ok;
+    var yLo=v.ymin-0.05*(v.ymax-v.ymin), yHi=v.ymax+0.05*(v.ymax-v.ymin);
+    for(n=n0;n<=n1;n++){
+      y=safeEval(S.fSeq,n); if(!isFinite(y)) continue;
+      if(y<yLo||y>yHi) continue;              // 视图外的点不画
+      ok=hasL&&Math.abs(y-L)<eps;
+      ctx.fillStyle=ok?'#2f855a':'#c53030';
+      ctx.beginPath(); ctx.arc(X(n),Y(y),ok?4.1:3.5,0,6.3); ctx.fill();
+    }
+    if(hasL){
+      ctx.strokeStyle='#1e2430'; ctx.lineWidth=1.3; ctx.setLineDash([4,4]);
+      ctx.beginPath(); ctx.moveTo(0,Y(L)); ctx.lineTo(W,Y(L)); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle='#1e2430'; ctx.font='12px Consolas,monospace'; ctx.textAlign='left'; ctx.textBaseline='bottom';
+      ctx.fillText('a = '+fmt(L,0.01)+'（数值估算）',8,Math.max(14,Y(L)-6));
+    }
+    updateSeqStats();
+  }
+  function setNRange(need){          // N 滑块上限跟着“扫描到的最小可用 N”走，避免够不着
+    var mx=Math.max(200,Math.min(SCAN_MAX,Math.round((need||0)*1.5)+10));
+    $('nRange').max=mx;
+    if(S.N>mx) S.N=mx;
+    $('nRange').value=S.N; $('nLbl').textContent=S.N;
+    return mx;
+  }
+  function updateSeqStats(){
+    var m=S.seqLim||{L:NaN,exists:false,note:'—'}, L=m.L;
+    var box='';
+    box+='极限 a = '+(m.exists?'<b style="color:#2f855a">'+prettyValue(L)+'</b>':'<b style="color:#c53030">不存在</b>')+'<br>';
+    box+='<span class="hint">'+m.note+'</span><br><br>';
+    box+='ε = <b>'+S.eps.toFixed(3)+'</b>，N = <b>'+S.N+'</b><br>';
+    if(!m.exists){
+      box+='结果：<span class="badge b-bad">✗ 数列发散，不满足极限定义</span>';
+    }else{
+      var chk=seqCheck(S.fSeq,L,S.eps,S.N), need=minN(S.fSeq,L,S.eps);
+      setNRange(need);
+      box+='在 1～'+SCAN_MAX+' 项内扫描，最后出现违例的是第 <b>'+(need<=0?'0 项（第 1 项起就满足）':(need>=SCAN_MAX?SCAN_MAX+' 项（可能还要更大）':need+' 项'))+'</b>；取 N ≥ 它可避开已发现的违例（不保证其后没有新的）<br>';
+      box+='结果：'+(chk.ok
+        ? '<span class="badge b-ok">✓ 采样范围内未发现违例（n &gt; N 均在带内）</span>'
+        : '<span class="badge b-bad">✗ 采样发现 '+chk.badCount+' 项跑出去</span>');
+      if(chk.ok&&need>0&&S.N>need) box+='<br><span class="hint">N 其实可以减到 '+need+'，说明 N 不唯一。</span>';
+    }
+    $('stats').innerHTML=box;
+    var d=$('defLine');
+    if(!m.exists){
+      d.innerHTML='<b>为什么发散：</b>'+m.note+'。<br>数列收敛要求 n 足够大以后，所有 aₙ 都挤在一个任意小的范围里。';
+    }else{
+      var ok=seqCheck(S.fSeq,L,S.eps,S.N).ok;
+      d.innerHTML='<b>数列极限定义：</b>对任意 ε&gt;0，都存在正整数 N，使得当 n&gt;N 时，|aₙ − a|&lt;ε。<br><br>'+
+        '当前取值：ε = '+S.eps.toFixed(3)+'，N = '+S.N+'，a = '+prettyValue(L)+'（数值估算）<br>'+
+        '⇒ n &gt; '+S.N+' 时 |aₙ − '+prettyValue(L)+'| '+(ok?'<span class="badge b-ok">&lt; ε（采样未发现例外）✓</span>':'<span class="badge b-bad">有超出 ε 的项 ✗</span>');
+    }
+    $('coach').textContent=m.exists
+      ? ('✅ 数列收敛到 '+prettyValue(L)+'（程序数值估算，不是证明）。把 ε 拖小 → 绿带变窄，通常要把 N 取大一些（看更靠后的项；原来的 N 若还够用也可不变）—— 这就是“N 依赖 ε”。')
+      : ('❌ '+m.note+'。当前采样下，N 取多大都还能找到跑出 ε 带的项 —— 数值上推测数列发散（不是证明）。');
+  }
+
+  /* ---------- 连续性 / 间断点模式 ---------- */
+  function recompute3(){
+    try{ S.f3=compileExpr(S.expr3); $('exprErr3').textContent=''; }
+    catch(err){ S.f3=null; $('exprErr3').textContent='⚠ '+err.message; }
+    S.cont=S.f3?classifyCont(S.f3,S.a3):null;
+    if(S.cont&&!S.cont.pluggable){ S.plugT=0; }
+    var dis=!(S.cont&&S.cont.pluggable);            // 不可去间断 → 锁死“填洞”控件，避免误解
+    if($('plugRange')){ $('plugRange').disabled=dis; $('plugRange').value=Math.round(S.plugT*100); }
+    if($('autoPlugBtn')) $('autoPlugBtn').disabled=dis;
+    if($('plugLbl')) $('plugLbl').textContent=dis?'不可填洞':(Math.round(S.plugT*100)+'%');
+  }
+  function autoFitYCont(){
+    if(!S.f3) return;
+    var pts=sampleCurve(S.f3,S.view.xmin,S.view.xmax,900), ys=[], i;
+    for(i=0;i<pts.length;i++) if(isFinite(pts[i].y)) ys.push(pts[i].y);
+    var lo=-1,hi=1;
+    if(ys.length>6){
+      ys.sort(function(p,q){return p-q;});
+      var k=Math.floor(ys.length*0.04);
+      lo=ys[k]; hi=ys[ys.length-1-k];
+    }
+    if(!(hi>lo)){ lo-=0.5; hi+=0.5; }
+    var c=S.cont;
+    if(c&&c.m){ [c.m.leftLimit,c.m.rightLimit,c.v0,c.L].forEach(function(v){ if(isFinite(v)){ lo=Math.min(lo,v); hi=Math.max(hi,v); } }); }
+    var pad=0.12*(hi-lo)+1e-6; lo-=pad; hi+=pad;
+    var mid=(lo+hi)/2, half=(hi-lo)/2;
+    if(!(half>1e-9)) half=Math.max(0.5,Math.abs(mid)*0.06+0.5);   // 常函数/退化成一点：给个像样的窗口
+    var cap=Math.max(100,Math.abs(mid)*4);                        // 防爆：只压跨度，以数据为中心（不能把窗口拉回 0）
+    if(half>cap) half=cap;
+    S.view.ymin=mid-half; S.view.ymax=mid+half;
+    if(!(S.view.ymax>S.view.ymin)){ S.view.ymin=mid-1; S.view.ymax=mid+1; }
+  }
+  function loadCont(p){
+    if(!p) return;
+    S.expr3=p.e; $('expr3').value=p.e; S.r0c=p.r;
+    S.a3=p.a; $('aNum3').value=p.a; $('aLbl3').textContent=fmt(p.a,0.01);
+    $('aRange3').min=Math.min(-10,p.a-p.r); $('aRange3').max=Math.max(10,p.a+p.r);
+    $('aRange3').value=p.a;
+    S.view.xmin=p.a-p.r; S.view.xmax=p.a+p.r;
+    S.plugT=0; $('plugRange').value=0; $('plugLbl').textContent='0%';
+    recompute3(); autoFitYCont(); draw();
+  }
+  function kTxt(kind,v){
+    if(kind==='missing') return '<span class="badge b-warn">不存在</span>';
+    if(kind==='infinite') return '<span class="badge b-bad">'+(v>0?'+∞':'−∞')+'</span>';
+    if(kind==='unstable') return '<span class="badge b-bad">振荡（不存在）</span>';
+    return '<b>'+prettyValue(v)+'</b>';
+  }
+  function cArrow(px,py,color,dir){
+    ctx.strokeStyle=color; ctx.lineWidth=1.7; ctx.beginPath();
+    var sx=px+dir*(-34), ex=px+dir*(-10);
+    ctx.moveTo(sx,py); ctx.lineTo(ex,py);
+    ctx.moveTo(ex,py); ctx.lineTo(ex-dir*6,py-4.5);
+    ctx.moveTo(ex,py); ctx.lineTo(ex-dir*6,py+4.5);
+    ctx.stroke();
+  }
+  function cDot(x,y,color,label,dy){
+    var px=X(x),py=Y(y);
+    ctx.fillStyle=color; ctx.beginPath(); ctx.arc(px,py,5.5,0,6.3); ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=1.6; ctx.stroke();
+    if(label){ ctx.fillStyle=color; ctx.font='12px "Microsoft YaHei"'; ctx.textAlign='left'; ctx.textBaseline='top'; ctx.fillText(label,px+10,py+8+(dy||0)); }
+  }
+  function cRing(x,y,color,label,dy){
+    var px=X(x),py=Y(y);
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(px,py,5.5,0,6.3); ctx.fill();
+    ctx.strokeStyle=color; ctx.lineWidth=2.4; ctx.stroke();
+    if(label){ ctx.fillStyle=color; ctx.font='12px "Microsoft YaHei"'; ctx.textAlign='left'; ctx.textBaseline='top'; ctx.fillText(label,px+10,py+8+(dy||0)); }
+  }
+  function drawCont(){
+    ctx.fillStyle='#fbfdff'; ctx.fillRect(0,0,S.W,S.H);
+    var v=S.view, W=S.W, H=S.H;
+    var xt=niceTicks(v.xmin,v.xmax,Math.round(W/90)), yt=niceTicks(v.ymin,v.ymax,Math.round(H/60));
+    ctx.lineWidth=1; ctx.strokeStyle='#e4ebf5'; ctx.beginPath();
+    xt.ticks.forEach(function(t){ var px=Math.round(X(t))+.5; ctx.moveTo(px,0); ctx.lineTo(px,H); });
+    yt.ticks.forEach(function(t){ var py=Math.round(Y(t))+.5; ctx.moveTo(0,py); ctx.lineTo(W,py); });
+    ctx.stroke();
+    ctx.strokeStyle='#5b6b82'; ctx.lineWidth=1.6; ctx.beginPath();
+    if(v.ymin<0&&v.ymax>0){ var y0=Math.round(Y(0))+.5; ctx.moveTo(0,y0); ctx.lineTo(W,y0); }
+    if(v.xmin<0&&v.xmax>0){ var x0=Math.round(X(0))+.5; ctx.moveTo(x0,0); ctx.lineTo(x0,H); }
+    ctx.stroke();
+    ctx.fillStyle='#5b6675'; ctx.font='12px Consolas,monospace';
+    ctx.textAlign='center'; ctx.textBaseline='top';
+    xt.ticks.forEach(function(t){ if(t===0&&v.ymin<0&&v.ymax>0) return; ctx.fillText(fmt(t,xt.step),X(t),Math.min(H-14,Math.max(2,Y(0)+4))); });
+    ctx.textAlign='right'; ctx.textBaseline='middle';
+    yt.ticks.forEach(function(t){ if(t===0) return; ctx.fillText(fmt(t,yt.step),Math.min(W-4,Math.max(34,X(0)-6)),Y(t)); });
+
+    if(!S.f3){
+      ctx.fillStyle='#c53030'; ctx.font='15px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('表达式有误，请检查左侧输入',W/2,H/2);
+      $('stats').innerHTML='<span class="hint">表达式无法解析，请检查函数/分段写法。</span>';
+      $('defLine').innerHTML=''; $('coach').textContent='在左上角输入函数，或点下面的典型例子。'; return;
+    }
+    var a=S.a3, c=S.cont, m=c.m;
+    // 无穷间断：竖直渐近线
+    if(c.type==='infinite'){
+      ctx.strokeStyle='rgba(197,48,48,.75)'; ctx.lineWidth=1.6; ctx.setLineDash([7,5]);
+      ctx.beginPath(); ctx.moveTo(X(a),0); ctx.lineTo(X(a),H); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle='#c53030'; ctx.font='12px "Microsoft YaHei"'; ctx.textAlign='left'; ctx.textBaseline='top';
+      ctx.fillText('竖直渐近线 x = '+fmt(a,0.01),X(a)+7,8);
+    }
+    // 曲线（分段函数在接缝处断开，不连成一条）
+    var n=Math.max(900,Math.round(W*1.6)), pts=sampleCurve(S.f3,v.xmin,v.xmax,n), i,p,q;
+    var jump=0.85*(v.ymax-v.ymin), P=new Path2D();
+    for(i=0;i<pts.length-1;i++){
+      p=pts[i]; q=pts[i+1];
+      if(!isFinite(p.y)||!isFinite(q.y)) continue;
+      if(Math.abs(q.y-p.y)>jump) continue;
+      if(S.f3.pieceOf&&S.f3.pieceOf(p.x)!==S.f3.pieceOf(q.x)) continue;
+      P.moveTo(X(p.x),Y(p.y)); P.lineTo(X(q.x),Y(q.y));
+    }
+    ctx.strokeStyle='#718096'; ctx.lineWidth=2.6; ctx.lineCap='round'; ctx.stroke(P);
+
+    var lv=m.leftLimit, rv=m.rightLimit, v0=c.v0, L=c.L;
+    var moved=c.pluggable&&S.plugT>0;
+    var yDot = moved ? (c.hasV?v0+S.plugT*(L-v0):(S.plugT>=0.999?L:NaN)) : (c.hasV?v0:NaN);
+    if(c.type==='continuous'){
+      cDot(a,v0,'#2f855a','f(x₀) = '+prettyValue(v0)+'（三要素齐备）',0);
+    }else if(c.type==='removable'){
+      if(!(moved&&S.plugT>=0.999)) cRing(a,L,'#7c3aed','极限 L = '+prettyValue(L)+'（洞）',-20);
+      if(isFinite(yDot)) cDot(a,yDot,moved&&S.plugT>=0.999?'#2f855a':'#7c3aed',(moved&&S.plugT>=0.999?'填洞后 f(x₀) = ':'f(x₀) = ')+prettyValue(yDot),18);
+      else if(S.plugT>0){ ctx.globalAlpha=Math.max(0.15,S.plugT); cDot(a,L,'#2f855a','填上 f(x₀) = '+prettyValue(L),18); ctx.globalAlpha=1; }
+    }else if(c.type==='jump'){
+      if(isFinite(lv)){ cRing(a,lv,'#2b6cb0','左极限 f(x₀⁻) = '+prettyValue(lv),18); cArrow(X(a),Y(lv),'#2b6cb0',+1); }
+      if(isFinite(rv)){ cRing(a,rv,'#2f855a','右极限 f(x₀⁺) = '+prettyValue(rv),-20); cArrow(X(a),Y(rv),'#2f855a',-1); }
+      if(isFinite(v0)) cDot(a,v0,'#7c3aed','f(x₀) = '+prettyValue(v0),0);
+    }else if(c.type==='infinite'){
+      if(isFinite(v0)) cDot(a,v0,'#7c3aed','f(x₀) = '+prettyValue(v0),0);
+    }else if(c.type==='second'){
+      if(isFinite(lv)){ cRing(a,lv,'#2b6cb0','左极限 f(x₀⁻) = '+prettyValue(lv),18); cArrow(X(a),Y(lv),'#2b6cb0',+1); }
+      if(isFinite(rv)){ cRing(a,rv,'#2f855a','右极限 f(x₀⁺) = '+prettyValue(rv),-20); cArrow(X(a),Y(rv),'#2f855a',-1); }
+      if(isFinite(v0)) cDot(a,v0,'#7c3aed','f(x₀) = '+prettyValue(v0),0);
+    }
+    if(X(a)<-10||X(a)>W+10){            // x₀ 被平移出视野时给个提示
+      ctx.fillStyle='#b7791f'; ctx.font='12px "Microsoft YaHei"'; ctx.textAlign='left'; ctx.textBaseline='top';
+      ctx.fillText('x₀ = '+fmt(a,0.01)+' 在当前视野外，点“复位”回到考察点',10,H-22);
+    }
+    updateContStats();
+  }
+  function updateContStats(){
+    var st=$('stats'), d0=$('defLine'), co=$('coach'), c=S.cont;
+    if(!c){ st.innerHTML='<span class="hint">表达式无法解析，请检查写法。</span>'; d0.innerHTML=''; co.textContent=''; return; }
+    var m=c.m, plugDone=c.pluggable&&S.plugT>=0.999, eff=plugDone?'continuous':c.type;
+    var box='';
+    box+='左极限 f(x₀⁻) = '+kTxt(m.leftKind,c.lv)+'<br>';
+    box+='右极限 f(x₀⁺) = '+kTxt(m.rightKind,c.rv)+'<br>';
+    box+='函数值 f(x₀) = '+(plugDone?'<b style="color:#2f855a">'+prettyValue(c.L)+'</b> <span class="hint">（已填洞）</span>':(c.hasV?'<b>'+prettyValue(c.v0)+'</b>':'<span class="badge b-warn">无定义</span>'))+'<br>';
+    if(m.leftKind==='finite'&&m.rightKind==='finite')
+      box+='左右极限 '+(m.exists?'<span class="badge b-ok">相等</span>':'<span class="badge b-bad">不相等</span>')+'<br>';
+    else box+='左右极限 <span class="badge b-bad">不都取得有限值</span><br>';
+    box+='<span class="hint">'+m.note+'</span><br><br>';
+    box+='判定：<span class="badge '+(eff==='continuous'?'b-ok':'b-bad')+'">'+contTypeName(eff)+'</span><br>';
+    box+='<span class="hint">'+(plugDone?'已把 f(x₀) 补成极限值，间断被补掉 → 连续。':c.reason)+'</span>';
+    if(c.pluggable&&!plugDone) box+='<br><span class="hint">可以拖动左侧“填洞”滑块，把 f(x₀) 补成 '+prettyValue(c.L)+'，看它变成连续。</span>';
+    st.innerHTML=box;
+    d0.innerHTML='<b>连续三要素：</b>① f 在 x₀ 有定义；② lim<sub>x→x₀</sub> f(x) 存在；③ 极限值 = f(x₀)。三者缺一即为间断点。<br><br>'+
+      '<b>间断点分类：</b>左右极限都存在 → 第一类（相等 = 可去，不等 = 跳跃）；至少一侧极限不存在 → 第二类（无穷、振荡等）。';
+    co.textContent = eff==='continuous'
+      ? '✅ 三个条件都满足：函数在 x₀ 处连续。可以再点其它例子，对比“差在哪一条”。'
+      : '❌ 不连续：'+c.reason+'。'+(c.pluggable?'拖动左边的“填洞”滑块，把 f(x₀) 补成极限值，就能看见它变连续。':'');
+  }
+
+  /* ---------- 交互 ---------- */
+  // 改 x₀：重算极限、视图跟随居中、重新适配纵轴、修正 δ 范围
+  function applyA(newA){
+    if(!isFinite(newA)) newA=0;
+    if(Math.abs(newA)>1000000) newA=(newA>0?1:-1)*1000000;   // 限制在教学合理范围内
+    S.a=newA;
+    $('aNum').value=newA; $('aLbl').textContent=fmt(newA,0.01);
+    $('aRange').value=Math.max(parseFloat($('aRange').min),Math.min(parseFloat($('aRange').max),newA));
+    recompute();
+    var half=Math.max(0.05,(S.view.xmax-S.view.xmin)/2);
+    S.view.xmin=S.a-half; S.view.xmax=S.a+half;
+    autoFitY();
+    var r=Math.max(0.05,(S.r0||6));
+    $('deltaRange').max=Math.max(0.1,r*0.9);
+    S.delta=Math.max(0.001,Math.min(S.delta,parseFloat($('deltaRange').max)));
+    $('deltaRange').value=S.delta; $('deltaLbl').textContent=S.delta.toFixed(3);
+    draw();
+  }
+  function applyA3(newA){
+    if(!isFinite(newA)) newA=0;
+    if(Math.abs(newA)>1000000) newA=(newA>0?1:-1)*1000000;
+    S.a3=newA;
+    $('aNum3').value=newA; $('aLbl3').textContent=fmt(newA,0.01);
+    $('aRange3').value=Math.max(parseFloat($('aRange3').min),Math.min(parseFloat($('aRange3').max),newA));
+    var half=Math.max(0.05,(S.view.xmax-S.view.xmin)/2);
+    S.view.xmin=S.a3-half; S.view.xmax=S.a3+half;
+    S.plugT=0; $('plugRange').value=0; $('plugLbl').textContent='0%';
+    recompute3(); autoFitYCont(); draw();
+  }
+  function setExpr(e,a,r){
+    $('expr').value=e; S.expr=e; S.a=a; S.r0=r;
+    $('aNum').value=a; $('aRange').min=Math.min(-10,a-r); $('aRange').max=Math.max(10,a+r);
+    $('aRange').value=a;
+    S.view.xmin=a-r; S.view.xmax=a+r;
+    recompute(); autoFitY();
+    // 默认 δ 取 δ_max 的一半左右，便于观察
+    var md=findMaxDelta(S.f,S.a,S.lim.L,S.eps,r);
+    S.delta=Math.max(1e-4, Math.min(r*0.9, (md.delta<1e-6?r*0.45:md.delta*0.6)));
+    $('deltaRange').max=Math.max(0.1,S.view.xmax-S.a);
+    $('deltaRange').value=S.delta; $('deltaLbl').textContent=S.delta.toFixed(3);
+    draw();
+  }
+  $('expr').addEventListener('input',function(){ S.expr=this.value; recompute(); autoFitY(); draw(); });
+  $('expr').addEventListener('keydown',function(e){ if(e.key==='Enter'){ S.r0=Math.max(1,Math.abs(S.a)*3||6);
+    S.view.xmin=S.a-S.r0; S.view.xmax=S.a+S.r0; autoFitY(); draw(); } });
+  $('aNum').addEventListener('input',function(){ applyA(parseFloat(this.value)||0); });
+  $('aRange').addEventListener('input',function(){ applyA(parseFloat(this.value)); });
+  $('epsRange').addEventListener('input',function(){
+    S.eps=t2eps(parseFloat(this.value)); syncEpsUI(); draw();
+  });
+  $('deltaRange').addEventListener('input',function(){
+    S.delta=parseFloat(this.value); $('deltaLbl').textContent=S.delta.toFixed(3); draw();
+  });
+  $('fitBtn').addEventListener('click',function(){
+    var r=Math.max(0.05,(S.r0||6));
+    var md=findMaxDelta(S.f,S.a,S.lim.L,S.eps,r);
+    var d=md.delta;
+    if(d<1e-6){ d=r*0.45; }
+    else d=Math.min(d*0.98, r*0.9);
+    S.delta=d; $('deltaRange').max=Math.max(0.1,r*0.9); $('deltaRange').value=d;
+    $('deltaLbl').textContent=d.toFixed(3); draw();
+  });
+  $('resetBtn').addEventListener('click',function(){
+    S.r0=S.r0||6; S.view.xmin=S.a-S.r0; S.view.xmax=S.a+S.r0; autoFitY(); draw();
+  });
+  $('zoomInBtn').addEventListener('click',function(){
+    var c=(S.view.xmin+S.view.xmax)/2, s=(S.view.xmax-S.view.xmin)*0.35;
+    S.view.xmin=c-s; S.view.xmax=c+s; autoFitY(); draw();
+  });
+  $('zoomOutBtn').addEventListener('click',function(){
+    var c=(S.view.xmin+S.view.xmax)/2, s=(S.view.xmax-S.view.xmin)*1.8;
+    S.view.xmin=c-s; S.view.xmax=c+s; autoFitY(); draw();
+  });
+  $('zoomDeltaBtn').addEventListener('click',function(){
+    if(!S.f||!S.lim||!S.lim.exists) return;
+    var d=Math.max(S.delta,1e-4), e=Math.max(S.eps,1e-6), L=S.lim.L;
+    S.view.xmin=S.a-d*1.3; S.view.xmax=S.a+d*1.3;
+    S.view.ymin=L-e*1.8;  S.view.ymax=L+e*1.8;
+    draw();
+  });
+  $('exportBtn').addEventListener('click',exportPNG);
+  // 鼠标拖动 / 触摸拖动 + 滚轮 / 双指缩放
+  var drag=null, pinch=null;
+  function tDist(t){ var dx=t[0].clientX-t[1].clientX, dy=t[0].clientY-t[1].clientY; return Math.sqrt(dx*dx+dy*dy); }
+  cv.addEventListener('pointerdown',function(e){
+    if(e.pointerType==='touch'&&pinch) return;
+    drag={x:e.clientX,y:e.clientY,v:Object.assign({},S.view)};
+    cv.classList.add('drag');
+    try{ cv.setPointerCapture(e.pointerId); }catch(err){}
+  });
+  cv.addEventListener('pointermove',function(e){
+    if(!drag) return;
+    var dxx=(e.clientX-drag.x)/S.W*(drag.v.xmax-drag.v.xmin);
+    var dyy=(e.clientY-drag.y)/S.H*(drag.v.ymax-drag.v.ymin);
+    S.view.xmin=drag.v.xmin-dxx; S.view.xmax=drag.v.xmax-dxx;
+    S.view.ymin=drag.v.ymin+dyy; S.view.ymax=drag.v.ymax+dyy; draw();
+  });
+  function endDrag(){ drag=null; cv.classList.remove('drag'); }
+  cv.addEventListener('pointerup',endDrag);
+  cv.addEventListener('pointercancel',endDrag);
+  function zoomAt(px,py,k){
+    var mx=invX(px), my=invY(py);
+    S.view.xmin=mx+(S.view.xmin-mx)*k; S.view.xmax=mx+(S.view.xmax-mx)*k;
+    S.view.ymin=my+(S.view.ymin-my)*k; S.view.ymax=my+(S.view.ymax-my)*k;
+    draw();
+  }
+  cv.addEventListener('wheel',function(e){
+    e.preventDefault();
+    zoomAt(e.offsetX,e.offsetY,e.deltaY>0?1.12:1/1.12);
+  },{passive:false});
+  cv.addEventListener('touchstart',function(e){
+    if(e.touches.length===2){ drag=null; pinch={d:tDist(e.touches),v:Object.assign({},S.view)}; e.preventDefault(); }
+  },{passive:false});
+  cv.addEventListener('touchmove',function(e){
+    if(pinch&&e.touches.length===2){
+      e.preventDefault();
+      var k=pinch.d/Math.max(1,tDist(e.touches));
+      k=Math.max(0.4,Math.min(2.5,k));
+      var mx=(pinch.v.xmin+pinch.v.xmax)/2, my=(pinch.v.ymin+pinch.v.ymax)/2;
+      S.view.xmin=mx+(pinch.v.xmin-mx)*k; S.view.xmax=mx+(pinch.v.xmax-mx)*k;
+      S.view.ymin=my+(pinch.v.ymin-my)*k; S.view.ymax=my+(pinch.v.ymax-my)*k;
+      draw();
+    }
+  },{passive:false});
+  cv.addEventListener('touchend',function(e){ if(e.touches.length<2) pinch=null; });
+  cv.addEventListener('touchcancel',function(){ pinch=null; endDrag(); });
+
+  // 函数快捷键：点一下就往输入框里插入
+  var INS={'x²':'^2','√':'sqrt(','|x|':'abs(','π':'π','eˣ':'exp(','−':'-','÷':'/','×':'*','≤':'<=','≥':'>=','<':'<','>':'>',';':';',':':':'};
+  var KEYS_FN=['x','x²','√','|x|','π','sin','cos','tan','ln','eˣ','(',')','+','−','^','e','÷','×','⌫','清空'];
+  var KEYS_SEQ=['n','x²','√','|x|','π','sin','cos','tan','ln','eˣ','(',')','+','−','^','e','÷','×','⌫','清空'];
+  var KEYS_CONT=['x','x²','√','|x|','π','<','>','≤','≥',';',':','(',')','+','−','^','÷','×','⌫','清空'];
+  function buildKeypad(boxId,inputId,keys){
+    var KEYS=keys||KEYS_FN;
+    var box=$(boxId);
+    KEYS.forEach(function(k){
+      var b=document.createElement('button'); b.type='button'; b.textContent=k;
+      b.addEventListener('click',function(){
+        var el=$(inputId), v=el.value,
+            s=(el.selectionStart==null?v.length:el.selectionStart),
+            e2=(el.selectionEnd==null?s:el.selectionEnd);
+        if(k==='⌫'){
+          if(s>0&&s===e2){ v=v.slice(0,s-1)+v.slice(s); s--; }
+          else v=v.slice(0,s)+v.slice(e2);
+        }else if(k==='清空'){ v=''; s=0; }
+        else { var ins=INS[k]||k; v=v.slice(0,s)+ins+v.slice(e2); s+=ins.length; }
+        el.value=v; el.focus(); try{ el.setSelectionRange(s,s); }catch(err){}
+        if(inputId==='expr2'){ S.expr2=v; recomputeSeq(); autoFitYSeq(); draw(); }
+        else if(inputId==='expr3'){ S.expr3=v; S.plugT=0; $('plugRange').value=0; $('plugLbl').textContent='0%'; recompute3(); autoFitYCont(); draw(); }
+        else { S.expr=v; recompute(); autoFitY(); draw(); }
+      });
+      box.appendChild(b);
+    });
+  }
+  buildKeypad('keypad','expr');
+  buildKeypad('keypad2','expr2',KEYS_SEQ);
+  buildKeypad('keypad3','expr3',KEYS_CONT);
+
+  // 函数例子
+  var pl=$('presets');
+  PRESETS.forEach(function(p,idx){
+    var b=document.createElement('button'); b.textContent=p.n;
+    b.addEventListener('click',function(){ setExpr(p.e,p.a,p.r); location.hash=String(idx); });
+    pl.appendChild(b);
+  });
+  // 数列例子
+  var pl2=$('presets2');
+  SEQ_PRESETS.forEach(function(p,idx){
+    var b=document.createElement('button'); b.textContent=p.n;
+    b.addEventListener('click',function(){ loadSeq(p); location.hash='s'+idx; });
+    pl2.appendChild(b);
+  });
+  // 连续性例子
+  var pl3=$('presets3');
+  CONT_PRESETS.forEach(function(p,idx){
+    var b=document.createElement('button'); b.textContent=p.n;
+    b.addEventListener('click',function(){ loadCont(p); location.hash='c'+idx; });
+    pl3.appendChild(b);
+  });
+  // 模式切换与数列交互
+  $('tabFn').addEventListener('click',function(){ setMode('fn'); });
+  $('tabSeq').addEventListener('click',function(){ setMode('seq'); });
+  $('tabCont').addEventListener('click',function(){ setMode('cont'); });
+  $('expr3').addEventListener('input',function(){ S.expr3=this.value; S.plugT=0; $('plugRange').value=0; $('plugLbl').textContent='0%'; recompute3(); autoFitYCont(); draw(); });
+  $('aNum3').addEventListener('input',function(){ applyA3(parseFloat(this.value)||0); });
+  $('aRange3').addEventListener('input',function(){ applyA3(parseFloat(this.value)); });
+  $('plugRange').addEventListener('input',function(){ S.plugT=(parseInt(this.value,10)||0)/100; $('plugLbl').textContent=Math.round(S.plugT*100)+'%'; draw(); });
+  $('autoPlugBtn').addEventListener('click',function(){ S.plugT=1; $('plugRange').value=100; $('plugLbl').textContent='100%'; draw(); });
+  $('exportBtn3').addEventListener('click',exportPNG);
+  $('resetBtn3').addEventListener('click',function(){ S.r0c=S.r0c||4; S.view.xmin=S.a3-S.r0c; S.view.xmax=S.a3+S.r0c; autoFitYCont(); draw(); });
+  $('zoomInBtn3').addEventListener('click',function(){ var c=(S.view.xmin+S.view.xmax)/2,s=(S.view.xmax-S.view.xmin)*0.35; S.view.xmin=c-s; S.view.xmax=c+s; autoFitYCont(); draw(); });
+  $('zoomOutBtn3').addEventListener('click',function(){ var c=(S.view.xmin+S.view.xmax)/2,s=(S.view.xmax-S.view.xmin)*1.8; S.view.xmin=c-s; S.view.xmax=c+s; autoFitYCont(); draw(); });
+  $('expr2').addEventListener('input',function(){ S.expr2=this.value; recomputeSeq(); autoFitYSeq(); draw(); });
+  $('epsRange2').addEventListener('input',function(){ S.eps=t2eps(parseFloat(this.value)); syncEpsUI(); draw(); });
+  $('nRange').addEventListener('input',function(){ S.N=parseInt(this.value,10)||1; $('nLbl').textContent=S.N; draw(); });
+  $('fitNBtn').addEventListener('click',function(){
+    var m=S.seqLim; if(!m||!m.exists||!S.fSeq) return;
+    var need=minN(S.fSeq,m.L,S.eps), mx=setNRange(need);
+    var n=Math.max(1,Math.min(mx,need||1));
+    S.N=n; $('nRange').value=n; $('nLbl').textContent=n; draw();
+  });
+  $('exportBtn2').addEventListener('click',exportPNG);
+  $('resetBtn2').addEventListener('click',function(){
+    S.view.xmin=0; S.view.xmax=(S.r0Seq||40); autoFitYSeq(); draw();
+  });
+  $('zoomInBtn2').addEventListener('click',function(){
+    S.view.xmax=Math.max(5,Math.round(S.view.xmax*0.6)); autoFitYSeq(); draw();
+  });
+  $('zoomOutBtn2').addEventListener('click',function(){
+    S.view.xmax=Math.min(400,S.view.xmax*1.7); autoFitYSeq(); draw();
+  });
+  $('invChk').addEventListener('change',function(){
+    S.showInv=this.checked;
+    if(S.showInv){                       // 保证翻折后的曲线能大体落在画面里
+      var lo=S.view.xmin, hi=S.view.xmax, y0=S.view.ymin, y1=S.view.ymax, w=hi-lo;
+      if(y0<lo||y1>hi){
+        var nlo=Math.min(lo,y0), nhi=Math.max(hi,y1);
+        if(nhi-nlo>4*w){ var c=(nlo+nhi)/2, half=2*w; nlo=c-half; nhi=c+half; }
+        S.view.xmin=nlo; S.view.xmax=nhi;
+      }
+    }
+    draw();
+  });
+
+  // 初始化（网址末尾加 #2 打开第 3 个函数例子；#s1 数列；#c2 连续性例子）
+  var hh=(location.hash||'').replace('#',''), pm=hh.match(/^c(\d+)p(\d+)$/), isSeq=/^s\d+$/.test(hh),
+      isCont=/^c\d+$/.test(hh)||!!pm, idx=parseInt((pm?pm[1]:hh).replace(/^[sc]/,''),10),
+      plug0=pm?Math.max(0,Math.min(100,parseInt(pm[2],10))):null;
+  syncEpsUI();
+  window.addEventListener('resize',resize);
+  (function(){
+    var init=(!isSeq&&!isCont&&idx>=0&&idx<PRESETS.length)?PRESETS[idx]:PRESETS[0];
+    S.r0=init.r; S.view.xmin=-init.r; S.view.xmax=init.r;
+    resize();                       // 先把画布尺寸定下来
+    setExpr(init.e,init.a,init.r);
+  })();
+  if(isSeq){ setMode('seq'); loadSeq(SEQ_PRESETS[idx]||SEQ_PRESETS[0]); }
+  else if(isCont){
+    setMode('cont'); loadCont(CONT_PRESETS[idx]||CONT_PRESETS[0]);
+    if(plug0!=null&&S.cont&&S.cont.pluggable){ S.plugT=plug0/100; $('plugRange').value=plug0; $('plugLbl').textContent=plug0+'%'; draw(); }
+  }
+})();
+</script>
+</body>
+</html>
