@@ -197,6 +197,7 @@
         <button id="resetBtn">复位</button>
         <button id="zoomInBtn">放大</button>
         <button id="zoomOutBtn">缩小</button>
+        <button id="recipBtn" style="grid-column:1/-1" title="无穷小 ↔ 无穷大：f 换成 1/f">取倒数 1/f(x)（演示无穷小 ↔ 无穷大）</button>
       </div>
     </div>
 
@@ -235,6 +236,9 @@
       </div>
       <div class="btns" style="grid-template-columns:1fr">
         <button id="zoomOutBtn2">缩小</button>
+      </div>
+      <div class="btns" style="grid-template-columns:1fr">
+        <button id="recipBtn2" title="数列取倒数：aₙ 换成 1/aₙ">取倒数 1/aₙ</button>
       </div>
     </div>
 
@@ -874,6 +878,28 @@ function previewHTML(src){
     rows.push('<div style="line-height:1.6"><span style="color:#2b6cb0;font-size:12.5px;font-family:\'Microsoft YaHei\'">'+cond+'</span> &nbsp;→&nbsp; '+vh+'</div>');
   }
   return '<span style="font-size:13px;font-family:\'Microsoft YaHei\'">分段函数：<br>'+rows.join('')+'</span>';
+}
+// 「取倒数」快捷键：把 f 换成 1/f；已经是 1/… 形式的再点一次就还原
+// 用途：无穷小 ↔ 无穷大（f→∞ 当且仅当 1/f→0）
+function toggleRecip(src){
+  var s=String(src==null?'':src).trim();
+  if(!s) return s;
+  var isAtom=function(t){ return /^[A-Za-z_][A-Za-z0-9_]*$/.test(t)||/^\d+(\.\d+)?$/.test(t); };
+  var pairOK=function(t){                 // 整体被一对括号包住（且不提前闭合）？
+    if(t.charAt(0)!=='('||t.charAt(t.length-1)!==')') return false;
+    var d=0,i;
+    for(i=0;i<t.length;i++){
+      if(t.charAt(i)==='(') d++;
+      else if(t.charAt(i)===')'){ d--; if(d===0) return i===t.length-1; }
+    }
+    return false;
+  };
+  if(s.indexOf('1/')===0){
+    var rest=s.slice(2).trim();
+    if(isAtom(rest)) return rest;
+    if(pairOK(rest)) return rest.slice(1,-1).trim();
+  }
+  return '1/'+(isAtom(s)||pairOK(s) ? s : '('+s+')');
 }
 
 // ===== 连续性 / 间断点分类（判定内核，与界面无关） =====
@@ -1577,6 +1603,17 @@ function contTypeName(t){
     S.view.ymin=L-e*1.8;  S.view.ymax=L+e*1.8;
     draw();
   });
+  // 取倒数：无穷小 ↔ 无穷大（f 换成 1/f）
+  function applyRecip(which){
+    var inp=(which==='seq')?$('expr2'):$('expr');
+    var v=toggleRecip(inp.value);
+    if(v===inp.value) return;
+    inp.value=v;
+    if(which==='seq'){ S.expr2=v; recomputeSeq(); autoFitYSeq(); }
+    else { S.expr=v; recompute(); autoFitY(); }
+    draw();
+  }
+  $('recipBtn').addEventListener('click',function(){ applyRecip('fn'); });
   $('exportBtn').addEventListener('click',exportPNG);
   // 鼠标拖动 / 触摸拖动 + 滚轮 / 双指缩放
   var drag=null, pinch=null;
@@ -1699,6 +1736,7 @@ function contTypeName(t){
     S.N=n; $('nRange').value=n; $('nLbl').textContent=n; draw();
   });
   $('exportBtn2').addEventListener('click',exportPNG);
+  $('recipBtn2').addEventListener('click',function(){ applyRecip('seq'); });
   $('resetBtn2').addEventListener('click',function(){
     S.view.xmin=0; S.view.xmax=(S.r0Seq||40); autoFitYSeq(); draw();
   });
