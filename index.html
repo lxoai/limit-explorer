@@ -46,7 +46,8 @@
   .mathprev sup{font-size:.72em;vertical-align:super}
   /* 外层是 flex 容器，直接放 <sup> 会变成 flex item、上标失效 → 包一层 inline-block */
   .mathprev .mbody{display:inline-block;white-space:nowrap}
-  .mathprev .rbody{border-top:1.3px solid currentColor;padding:0 .16em 0 .05em;white-space:nowrap}
+  .mathprev .rbody{display:inline-block;border-top:1.3px solid currentColor;padding:.04em .16em 0 .1em;margin-left:-.05em;white-space:nowrap}
+  .mathprev sup sup{font-size:.86em}      /* 嵌套上标不要越缩越小（如 e^(x^2)） */
   label{display:block;font-size:13px;margin:13px 0 5px;color:#334a68}
   label:first-child{margin-top:0}
   input[type=text],input[type=number],select{width:100%;padding:9px 11px;border:1px solid var(--line);
@@ -336,8 +337,11 @@ function normalizeExpr(raw){
   var s=stripPrefix(raw).trim();
   s=s.replace(/[×·＊]/g,'*').replace(/[÷]/g,'/').replace(/[−–—]/g,'-')
      .replace(/√/g,'sqrt(')                                                  // 直接粘 √x 也能用
-     .replace(/ˣ/g,'^x').replace(/ⁿ/g,'^n')                                  // 上标字符：eˣ → e^x
-     .replace(/¹/g,'^1').replace(/²/g,'^2').replace(/³/g,'^3').replace(/⁰/g,'^0')   // x² → x^2
+     .replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹⁻ˣⁿ]+/g, function(run){                     // 上标字符：eˣ、x²、x⁻¹
+       var t=run.replace(/⁻/g,'-').replace(/ˣ/g,'x').replace(/ⁿ/g,'n')
+                .replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]/g, function(c){ return String('⁰¹²³⁴⁵⁶⁷⁸⁹'.indexOf(c)); });
+       return (t.length===1&&/^[0-9xn]$/.test(t)) ? ('^'+t) : ('^('+t+')');
+     })
      .replace(/\^/g,'**');
   if(/[^0-9A-Za-z_+\-*/%(),.πΠ\s]/.test(s)) throw new Error('含有不支持的字符');
   var open=0,ci;                                                            // 括号没写全就自动补上（sin(x → sin(x)）
@@ -352,9 +356,10 @@ function rebuildTokens(s){
   var tk=fixUnaryPow(s.match(re)||[]), out='', prev=null, i, t;
   for(i=0;i<tk.length;i++){
     t=tk[i];
-    if(t==='π'||t==='Π'||t==='pi') t='PI';
-    else if(t==='e') t='E';
-    else if(t==='ln') t='log';
+    if(t==='π'||t==='Π'||t==='pi'||t==='PI') t='PI';
+    else if(t==='e'||t==='E') t='E';
+    else if(/^(ln|LN|Ln|lN)$/.test(t)) t='log';
+    else if(!ALLOWED[t] && /^[A-Za-z_]/.test(t) && ALLOWED[t.toLowerCase()]) t=t.toLowerCase();   // SIN→sin、SQRT→sqrt
     else if(!ALLOWED[t] && /^[A-Za-z_]/.test(t)) t=splitName(t);
     if(prev!==null && needMul(prev,t)) out+='*';
     out+=t; prev=t;
