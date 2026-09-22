@@ -44,6 +44,8 @@
   .frac .nu{padding:0 .3em;border-bottom:1.6px solid currentColor}
   .frac .de{padding:0 .3em}
   .mathprev sup{font-size:.72em;vertical-align:super}
+  /* 外层是 flex 容器，直接放 <sup> 会变成 flex item、上标失效 → 包一层 inline-block */
+  .mathprev .mbody{display:inline-block;white-space:nowrap}
   label{display:block;font-size:13px;margin:13px 0 5px;color:#334a68}
   label:first-child{margin-top:0}
   input[type=text],input[type=number],select{width:100%;padding:9px 11px;border:1px solid var(--line);
@@ -165,7 +167,7 @@
       <input id="expr" type="text" value="sin(x)/x" spellcheck="false">
       <div class="err" id="exprErr"></div>
       <div class="keypad" id="keypad"></div>
-      <div class="hint">乘号可省略：<code>2x</code>、<code>2π</code>、<code>x sin(x)</code> 都能识别。</div>
+      <div class="hint">乘号可省略：<code>2x</code>、<code>2π</code>、<code>x sin(x)</code> 都能识别；上标写法 <code>eˣ</code>、<code>x²</code> 也能直接粘贴（<code>log</code> 就是自然对数 <code>ln</code>）。</div>
       <div class="mathprev" id="mathPrev"><span class="lbl">显示为</span></div>
 
       <label>研究哪个点？ x₀ =</label>
@@ -327,7 +329,10 @@ function stripPrefix(s){
 }
 function normalizeExpr(raw){
   var s=stripPrefix(raw).trim();
-  s=s.replace(/[×·＊]/g,'*').replace(/[÷]/g,'/').replace(/[−–—]/g,'-').replace(/\^/g,'**');
+  s=s.replace(/[×·＊]/g,'*').replace(/[÷]/g,'/').replace(/[−–—]/g,'-')
+     .replace(/ˣ/g,'^x').replace(/ⁿ/g,'^n')                                  // 上标字符：eˣ → e^x
+     .replace(/¹/g,'^1').replace(/²/g,'^2').replace(/³/g,'^3').replace(/⁰/g,'^0')   // x² → x^2
+     .replace(/\^/g,'**');
   if(/[^0-9A-Za-z_+\-*/%(),.πΠ\s]/.test(s)) throw new Error('含有不支持的字符');
   return rebuildTokens(s);
 }
@@ -818,6 +823,24 @@ function mathRaw(n,html){
     case 'var': return (n.v==='PI'?'π':(n.v==='E'?'e':(html?esc(n.v):n.v)));
     case 'neg': return '−'+mathR(n.a,2,html);
     case 'fn':
+      if(n.args.length===1&&n.name==='exp'){            // exp(u) → e^u
+        var ax=mathR(n.args[0],2,html);
+        return html?('e<sup>'+ax+'</sup>'):('e^'+ax);
+      }
+      if(n.args.length===1&&n.name==='log'){            // 内部的 log 就是自然对数 → 显示成 ln
+        return 'ln('+mathR(n.args[0],0,html)+')';
+      }
+      if(n.args.length===1&&(n.name==='log10'||n.name==='log2')){
+        var ax2=mathR(n.args[0],0,html), sub=(n.name==='log10'?'10':'2');
+        return html?('log<sub>'+sub+'</sub>('+ax2+')'):(n.name+'('+ax2+')');
+      }
+      if(n.args.length===1&&n.name==='sqrt'){           // sqrt(u) → √u
+        var ax3=mathR(n.args[0],2,html);
+        return html?('√'+ax3):('√'+ax3);
+      }
+      if(n.args.length===1&&n.name==='abs'){            // abs(u) → |u|
+        return '|'+mathR(n.args[0],0,html)+'|';
+      }
       parts=[];
       for(i=0;i<n.args.length;i++) parts.push(mathR(n.args[i],0,html));
       return (html?esc(n.name):n.name)+'('+parts.join(', ')+')';
@@ -970,8 +993,8 @@ function contTypeName(t){
     var src=(S.mode==='seq')?S.expr2:(S.mode==='cont'?S.expr3:S.expr);
     var el=$(id); if(!el) return;
     var head='<span class="lbl">显示为</span>';
-    try{ el.innerHTML=head+previewHTML(src); }
-    catch(err){ el.innerHTML=head+'<span style="font-family:sans-serif;font-size:13px;color:#33455f">'+esc(src)+'</span>'; }
+    try{ el.innerHTML=head+'<span class="mbody">'+previewHTML(src)+'</span>'; }
+    catch(err){ el.innerHTML=head+'<span class="mbody"><span style="font-family:sans-serif;font-size:13px;color:#33455f">'+esc(src)+'</span></span>'; }
   }
   function draw(){
     if(!(S.W>0&&S.H>0)) return;              // 画布尺寸还没就绪
