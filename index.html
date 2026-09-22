@@ -46,6 +46,7 @@
   .mathprev sup{font-size:.72em;vertical-align:super}
   /* 外层是 flex 容器，直接放 <sup> 会变成 flex item、上标失效 → 包一层 inline-block */
   .mathprev .mbody{display:inline-block;white-space:nowrap}
+  .mathprev .rbody{border-top:1.3px solid currentColor;padding:0 .16em 0 .05em;white-space:nowrap}
   label{display:block;font-size:13px;margin:13px 0 5px;color:#334a68}
   label:first-child{margin-top:0}
   input[type=text],input[type=number],select{width:100%;padding:9px 11px;border:1px solid var(--line);
@@ -334,10 +335,14 @@ function stripPrefix(s){
 function normalizeExpr(raw){
   var s=stripPrefix(raw).trim();
   s=s.replace(/[×·＊]/g,'*').replace(/[÷]/g,'/').replace(/[−–—]/g,'-')
+     .replace(/√/g,'sqrt(')                                                  // 直接粘 √x 也能用
      .replace(/ˣ/g,'^x').replace(/ⁿ/g,'^n')                                  // 上标字符：eˣ → e^x
      .replace(/¹/g,'^1').replace(/²/g,'^2').replace(/³/g,'^3').replace(/⁰/g,'^0')   // x² → x^2
      .replace(/\^/g,'**');
   if(/[^0-9A-Za-z_+\-*/%(),.πΠ\s]/.test(s)) throw new Error('含有不支持的字符');
+  var open=0,ci;                                                            // 括号没写全就自动补上（sin(x → sin(x)）
+  for(ci=0;ci<s.length;ci++){ if(s.charAt(ci)==='(') open++; else if(s.charAt(ci)===')') open--; }
+  for(;open>0;open--) s+=')';
   return rebuildTokens(s);
 }
 // 把表达式切成“词”，顺便统一符号，并补上省略的乘号
@@ -838,9 +843,8 @@ function mathRaw(n,html){
         var ax2=mathR(n.args[0],0,html), sub=(n.name==='log10'?'10':'2');
         return html?('log<sub>'+sub+'</sub>('+ax2+')'):(n.name+'('+ax2+')');
       }
-      if(n.args.length===1&&n.name==='sqrt'){           // sqrt(u) → √u
-        var ax3=mathR(n.args[0],2,html);
-        return html?('√'+ax3):('√'+ax3);
+      if(n.args.length===1&&n.name==='sqrt'){           // sqrt(u) → √ 带上横线（像课本的根号，括号可省）
+        return html?('√<span class="rbody">'+mathR(n.args[0],0,true)+'</span>'):('√'+mathR(n.args[0],2,false));
       }
       if(n.args.length===1&&n.name==='abs'){            // abs(u) → |u|
         return '|'+mathR(n.args[0],0,html)+'|';
